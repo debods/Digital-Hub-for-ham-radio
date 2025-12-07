@@ -1,0 +1,78 @@
+#! /bin/bash
+
+# Model Information
+if grep -q "Raspberry Pi" /proc/cpuinfo; then
+  model=$(cat /sys/firmware/devicetree/base/model | tr -d '\0')
+fi
+
+# CPU Information
+cpuname=$(lscpu | grep 'Model name' | awk '{ print $3 }')
+cpucore=$(lscpu | grep 'Core(s) per cluster:' | awk '{ print $4 }')
+cpuspeed=$(lscpu | grep "max MHz" | awk '{ print $4 }' | cut -d. -f1)
+cpuscale=$(lscpu | grep "scaling MHz" | awk '{ print $4 }')
+cpuload=$({ head -n1 /proc/stat; sleep 0.2; head -n1 /proc/stat; } | awk '/^cpu /{u=$2-u;s=$4-s;i=$5-i;w=$6-w}END{print int(0.5+100*(u+s+w)/(u+s+i+w))"%"}')
+
+# Memory Information
+memtot=$(free -k | grep Mem | awk '{ print $2 }')
+memtotgb=$(echo "scale=2; $memtot / 1024 / 1024" | bc)
+memtotgb=$(printf "%.2f\n" "$memtotgb")
+memuse=$(free -k | grep Mem | awk '{ print $3 }')
+memusegb=$(echo "scale=2; $memuse / 1024 / 1024" | bc)
+memusegb=$(printf "%.2f\n" "$memusegb")
+memfre=$(free -k | grep Mem | awk '{ print $4 }')
+memfregb=$(echo "scale=2; $memfre / 1024 / 1024" | bc)
+memfregb=$(printf "%.2f\n" "$memfregb")
+memfrepct=$(echo "scale=2; ($memfre * 100) / $memtot" | bc)
+
+# Disk Information
+disksize=$(df / | sed -n '2{p;q}' | awk '{ print $2 }')
+diskused=$(df / | sed -n '2{p;q}' | awk '{ print $3 }')
+diskavai=$(df / | sed -n '2{p;q}' | awk '{ print $4 }')
+disksizegb=$(echo "scale=2; $disksize / 1024 / 1024" | bc)
+diskusedgb=$(echo "scale=2; $diskused / 1024 / 1024" | bc)
+diskavaigb=$(echo "scale=2; $diskavai / 1024 / 1024" | bc)
+diskupct=$(df / | sed -n '2{p;q}' | awk '{ print $5 }')
+
+# Uptime
+up=$(cut -d . -f 1 /proc/uptime)
+
+# Last Login
+if [[ "$(cat /etc/os-release | grep PRETTY)" == *"bookworm"* ]]; then
+  getlast=$(lastlog -u $USER | awk 'NR==2')
+else
+  getlast=$(lastlog2 -u $USER | awk 'NR==2')
+fi
+read -a lastinfo <<< "$getlast"
+#lastinfo[2]=$(nslookup "${lastinfo[2]}" | awk '{ print $4 }' | sed 's/\.$//')
+lastinfo[3]=$(date -d "${lastinfo[3]}" '+%A')
+lastinfo[4]=$(date -d "${lastinfo[4]} 1" '+%B')
+
+dd=$((up / 86400))
+remsecs=$((up % 86400))
+
+hh=$((remsecs / 3600))
+remsecs=$((remsecs % 3600))
+
+mm=$((remsecs / 60))
+remsecs=$((remsecs % 60))
+
+# Output
+colo='\033[34m'; noco='\033[0m'
+# clear; figlet -f slant $(hostname) | lolcat; echo
+if grep -q "Raspberry Pi" /proc/cpuinfo; then
+  echo -e " ${colo}Model${noco}                $model"
+  echo -e " ${colo}Serial Number${noco}        $(cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2)"
+  echo
+fi
+echo -e " ${colo}Operating System${noco}     $(cat /etc/os-release | grep PRETTY | sed 's/^[^"]*"//' | tr -d '"')"
+echo -e " ${colo}Kernel${noco}               $(uname -r)"
+echo -e " ${colo}Shell Version${noco}        $(echo $BASH_VERSION)"; echo
+echo -e " ${colo}CPU${noco}                  $cpuname $cpucore Cores @ $cpuspeed MHz ($cpuscale scaling) $cpuload Load"
+echo -e " ${colo}Memory${noco}               $memtotgb GB Total, $memusegb GB Used, $memfregb GB ($memfrepct%) Free"
+echo -e " ${colo}Disk${noco}                 $disksizegb GB Total, $diskavaigb GB Available, $diskusedgb GB ($diskupct) Used"; echo
+echo -e " ${colo}Hostname${noco}             $(hostname -f)"
+echo -e " ${colo}IP Addresses${noco}         Internal: $(ip a | grep -w inet | grep -v 127| awk '{ printf "%s ",$2 }')External: $(wget -q -O - http://icanhazip.com/ | tail)"; echo
+echo -e " ${colo}Timezone${noco}             $(date +'UTC %z (%Z)')"
+echo -e " ${colo}System Time${noco}          $(date +'%A,%e %B %Y, %r')"
+echo -e " ${colo}Uptime${noco}               $dd day(s) $hh hours(s) $mm minute(s) $remsecs second(s)"
+echo -e " ${colo}Last Login${noco}           ${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, ${lastinfo[4]} ${lastinfo[5]} ${lastinfo[8]}"; echo

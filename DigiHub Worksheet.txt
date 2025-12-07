@@ -1,0 +1,120 @@
+# Featureset
+APRSd WebChat Server
+Direwolf sound modem and TNC
+Direwatch display driver
+LinuxRMS Winlink server
+Pat web-based winlik email client
+Web-based mangement interface
+Bluetooth rfcomm serial port
+Wifi autohotspot 
+AX.25 Networking, IP, ax25d services
+Virtual display driver to use interactive apps via web-browser/wifi/phone
+WSJTX FT8
+JS8Call  
+FLDigi 
+qSSTV
+Linux Node service, netrom, bulletin board, Infocom games
+Audio driver and mixer settings for audio hats
+ARDOP modem for 300baud packet on HF bands
+Rig Control (rigctld) for CAT/audio on USB-connected radios
+Web-based wifi setup, log viewers, 
+AX.25 utilities, axcall, LinPac
+Web-based ssh command prompt
+
+# Information Required from User
+Callsign				Check Valid
+Winlink Password
+APRS Password			Generated from Callsign
+Grid Square				Generated from Latitude/Longitude
+Latitude
+Longitude
+GPS Device
+AX.25 Node Passord
+
+# Shell Script Creation
+reboot			done
+shutdown		done
+update			done
+aprspass		done	check parsing
+qrzls
+
+# Python Script Creation
+aprspass.py		done 	check parsing
+
+
+
+
+
+
+
+
+# HamGrid
+
+#!/usr/bin/env python
+
+import math, sys
+
+def latlon_to_grid(latitude, longitude):
+ field_lon = int((longitude + 180) / 20)
+ field_lat = int((latitude + 90) / 10)
+ grid = chr(ord('A') + field_lon) + chr(ord('A') + field_lat)
+
+ square_lon = int(((longitude + 180) % 20) / 2)
+ square_lat = int(((latitude + 90) % 10) / 1)
+ grid += str(square_lon) + str(square_lat)
+
+ subsquare_lon = int((((longitude + 180) % 20) % 2) / (2/24))
+ subsquare_lat = int((((latitude + 90) % 10) % 1) / (1/24))
+ grid += chr(ord('A') + subsquare_lon) + chr(ord('A') + subsquare_lat)
+
+ return grid
+
+latitude = 37.6872  # Example latitude
+longitude = -97.3301 # Example longitude
+
+grid_square = latlon_to_grid(latitude, longitude)
+print(f"{grid_square}")
+
+# Check Callsign
+
+#!/usr/bin/env python
+import re
+ from callsign_regex import get_callsign_regex
+
+ def is_valid_ham_callsign(callsign):
+ regex_pattern = get_callsign_regex()
+ return re.fullmatch(regex_pattern, callsign.upper()) is not None
+
+ # Example usage
+ print(is_valid_ham_callsign("DH1TW")) # True
+ print(is_valid_ham_callsign("K1ABC")) # True
+ print(is_valid_ham_callsign("INVALID")) # False
+
+
+# WWW Page Creation
+
+# User Information required (web Interface)
+Callsign
+Lat Lon
+
+
+# Functionality
+Check Internet	done
+Web interface
+Web Shell
+activate venv on boot
+
+
+
+# HAM Apps
+
+# dhuninstall.sh
+
+# Script Variables
+homepath="/home/$USER"
+dhpath="$homepath/digihub"
+
+
+sudo rm -r $dhpath
+$homepath/.profile			Remove digihub paths
+sudo apt -y purge python3-pip
