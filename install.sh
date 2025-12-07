@@ -8,6 +8,12 @@
 # Steve de Bode - KQ4ZCI - December 2025
 #
 
+# Check Parameters
+if [ "$#" -ne "1" ]; then
+  printf '\nUsage: %s <callsign>\n\n' "$0" >&2
+  exit 1
+fi
+
 # Functions
 
 function YnContinue {
@@ -22,17 +28,12 @@ RED='\e[31m'
 NC='\e[0m'  
     
 # Script Directories
+InstallPath="Digital-Hub-for-ham-radio"
 HomePath="/home/$USER"
 DigiHubHome="$HomePath/DigiHub"
 ScriptPath="$DigiHubHome/scripts"
 venv_dir="$DigiHubHome/.digihub-venv"
 PythonPath="$DigiHubHome/pyscripts"
-
-# Check Parameters
-if [ "$#" -ne "1" ]; then
-  printf '\nUsage: %s <callsign>\n\n' "$0" >&2
-  exit 1
-fi
 
 # Check for Internet Connectivity
 ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1
@@ -41,9 +42,16 @@ if [ $? -ne 0 ]; then
  exit 1
 fi
 
-# Get Home QTH & Check Valid ( availble as checkcall script)
+# Installer CYA
+if [ $InstallPath" != ${PWD##*/}] ; then
+ cd HomePath="/home/$USER"
+ git clone "https://github.com/debods/$InstallPath.git"    
+ cd $InstallPath
+fi
+
+# Get Home QTH & Check Valid (available as checkcall script)
 qth=$(curl -s "https://api.hamdb.org/v1/$1/csv/$1")
-IFS=',' read -r callsign licenseclass licenseexpiry grid lat lon status forename initial surname suffix street town state zipcode country <<< "$qth"
+IFS=',' read -r callsign licenseclass licenseexpiry grid lat lon status forename initial surname suffix street town state zip country <<< "$qth"
 
 if [ "$callsign" != "${1^^}" ]; then
  printf '\nThe Callsign \"%s\" is either invalid or not found, please check and try again.\n\n' "$1"
@@ -51,7 +59,7 @@ if [ "$callsign" != "${1^^}" ]; then
 fi
 
 fullname="$forename $initial $surname"; fullname=$(echo "$fullname" | xargs)
-address="$street, $town, $state $zipcode $country"
+address="$street, $town, $state $zip $country"
 
 # Convert License Class
 case "$licenseclass" in "T") licenseclass="Technician" ;; "G") licenseclass="General" ;; "E") licenseclass="Extra" ;; "N") licesnseclass="Novice" ;; "A") licenseclass "Advanced" ;; *) licenseclass="Station Callsign" ;; esac
@@ -64,11 +72,10 @@ printf '\nInstalling DigiHub in %s, with current information held by the FCC (ca
 printf 'Callsign\t%s\nLicense:\t%s expires %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n\n' "$callsign" "$licenseclass" "$licenseexpiry" "$status" "$fullname" "$address" "$grid" "$lat" "$lon"
 YnContinue
 
+# Options for Change 
 # Need to think about this, changing one will change all!
-
-# $grid
-# $latitude
-# $longitude
+# 
+# $lat $lon and recalculate grid
 
 # Overwrite existing Installation Warning
 printf '%b' "${RED}" 'Warning! ' "${NC}" 'continuing will overwrite an existing installation of DigiHub\n'
@@ -79,12 +86,6 @@ printf '\nThis may take some time ...\n\n'
 exit 0
 
 # Clone from GitHub and move into place
-
-# Create Directories
-cd $HomePath
-if [ ! -d "$ScriptPath" ]; then
-    mkdir -p "$ScriptPath" "$PythonPath"
-fi
 
 # Set Environment & PATH
 if ! grep -qF "# DigiHub Installation" "$HomePath/.profile"; then
@@ -99,19 +100,11 @@ if ! grep -qF "$ScriptPath" "$HomePath/.profile"; then
  echo -e "PATH=\"$ScriptPath:\$PATH\"" >> "$HomePath/.profile"
 fi
 
-# Shell Script Creation
-printf 'Creating Scripts ... '
-printf '#! /bin/bash\n\nsudo reboot\n' | tee $ScriptPath/reboot >/dev/null 2>&1
-printf '#! /bin/bash\n\nsudo shutdown -HP now\n' | tee $ScriptPath/shutdown >/dev/null 2>&1
-printf '#! /bin/bash\n\nsudo apt update\nsudo apt -y full-upgrade\nsudo apt -y autoremove\n' | tee  $ScriptPath/update >/dev/null 2>&1
-printf '#! /bin/bash\n\naprspw=$(python3 %s/aprspass.py $callsign)\nBash' "$PythonPath" | tee  $ScriptPath/aprspass >/dev/null 2>&1
+# Move files & directories into place
+mc $InstallPath/DigiHub $DigiHubHome
 
-# Python Script Creation
-printf '#!/usr/bin/env python\n\nimport sys\n\ndef getPass(callsign):\n\n basecall = callsign.upper().split('-')[0] + '\\\\0'\n result = 0x73e2\n\n c = 0\n while (c+1 < len(basecall)):\n  result ^= ord(basecall[c]) << 8\n  result ^= ord(basecall[c+1])\n  c += 2\n\n result &= 0x7fff\n return result\n\ndef main():\n print (getPass(sys.argv[1]))\n\nif __name__ == "__main__":\n main()\n' | tee  $PythonPath/aprspass.py >/dev/null 2>&1
-
-# Set Script Permissions
-chmod +x $ScriptPath/* $PythonPath/*
-printf 'Complete\n\n'
+# Ensure Script Permissions
+chmod +x $ScriptPath/* $PythonPath/*n'
 
 # Update OS
 printf 'Updating Operating System ... '
