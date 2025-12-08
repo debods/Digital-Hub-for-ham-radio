@@ -32,12 +32,12 @@ GPS Device
 AX.25 Node Password		Random AlphaNumeric set as axnodepass
 
 # Shell Script Creation
-reboot		done
-shutdown	done
-update		done
-checkcall	done
-sysinfo		done
-infochange	
+reboot		  done
+shutdown	  done
+update		  done
+checkcall	  done
+sysinfo		  done
+editconfig	- allow changes to callsign, lat, lon and possibly grid (if possible to calculate approx lat lon from it or from GPS)
 uninstall	-remove info in .profile, remove DigiHub Installation direcory (sudo)	
 aprspass 	in progress - python created (needs testing) wrapper needs creating
 hamgrid		in progress - python created (needs testing) wrapper needs creating			
