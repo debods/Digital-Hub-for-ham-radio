@@ -31,26 +31,19 @@ RED='\e[31m'
 NC='\e[0m'  
     
 # Script Directory Variables
-InstallPath="Digital-Hub-for-ham-radio"
-WWWPath="/var/www/html"
+WebPath="/var/www/html"
 HomePath="/home/$USER"
 DigiHubHome="$HomePath/DigiHub"
 ScriptPath="$DigiHubHome/scripts"
 venv_dir="$DigiHubHome/.digihub-venv"
 PythonPath="$DigiHubHome/pyscripts"
+InstallPath=$(pwd)
 
 # Check for Internet Connectivity
 ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1
 if [ $? -ne 0 ]; then
  printf '\nNo internet connectivity detected, which is required for initial installation - Aborting.\n\n'
  exit 1
-fi
-
-# Installer CYA
-if [ $InstallPath" != ${PWD##*/}] ; then
- cd $HomePath
- git clone "https://github.com/debods/$InstallPath.git"    
- cd $InstallPath
 fi
 
 # Get Home QTH & Check Valid (available as checkcall script)
@@ -103,7 +96,7 @@ done
 printf '\n' >> "$HomePath/.profile"
  
 # Move files/directories into place & set Permissions
-mv $InstallPath/DigiHub $DigiHubHome
+mv $InstallPath/Files $DigiHubHome
 # html files
 chmod +x $ScriptPath/* $PythonPath/*n'
 
