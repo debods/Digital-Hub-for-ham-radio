@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# dwupdate
+# dwsetup
 # Direwolf installer and updater
 #
 # Version 1.0a
@@ -9,7 +9,7 @@
 # Steve de Bode - KQ4ZCI - December 2025
 #
 
-cd ~
+cd $HomePath
 git clone https://www.github.com/wb2osz/direwolf
 cd direwolf
 mkdir build && cd build
@@ -17,3 +17,6 @@ cmake ..
 make -j4
 sudo make install
 make install-conf
+
+cd $HomePath
+rm -r direwolf 
