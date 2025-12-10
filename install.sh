@@ -2,7 +2,7 @@
 
 #
 # install.sh
-# DigiHub Build Script
+# DigiHub Configuration Script
 #
 # Version 1.0a
 #
