@@ -11,12 +11,19 @@ The installation script has been built and tested on Debian trixie meaning it ca
 A number of the methods uses to install, run and maintain DigiHub have been made into command line utilities:
 
 aprspass    -   Generate your APRS password
+
 checkcall   -   Check a callsign using the hamdb API
+
 dwsetup     -   Install, or update and existing installation of, Direwolf
+
 hamgrid     -   Get you Maidenhead ham grid from latitude and longitude
+
 sysinfo     -   System information
 
-Ther are other useful tools located in DigiHub/scripts.
+There are other useful tools located in DigiHub/scripts.
+
+
+
 
 All software is open-source licensed and is freely available.
 
