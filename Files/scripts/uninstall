@@ -17,7 +17,7 @@
 # sudo apt -y purge 
 
 # Remove Environment & PATH
-for i in "DigiHub"  "export VirtualEnv" "export Callsign" "export APRSPass" "export Lat" "export Lon" "export Grid" "sysinfo"; do
+for i in "DigiHub"  "export venv_dir" "export Callsign" "export APRSPass" "export Lat" "export Lon" "export Grid" "sysinfo"; do
  if grep -qF "$i" "$HomePath/.profile"; then
   sed -i "/$i/d" "$HomePath/.profile"
  fi
