@@ -24,7 +24,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Generate APRS-IS passcode for a callsign.")
-    parser.add_argument("callsign", help="Your amateur radio callsign (e.g., 9M2PJU, 9M2PJU-5)")
+    parser.add_argument("callsign", help="Your amateur radio callsign (e.g., KQ4ZCI, KQ4ZCI-2)")
     args = parser.parse_args()
 
     passcode = aprs_passcode(args.callsign)
