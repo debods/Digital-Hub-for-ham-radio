@@ -87,7 +87,7 @@ fi
 printf '\nThis may take some time ...\n\n' 
 
 # Copy files/directories into place & set Permissions
-cp $InstallPath/Files $DigiHubHome
+cp -R $InstallPath/Files $DigiHubHome
 # html files
 chmod +x $ScriptPath/* $PythonPath/*n
 
