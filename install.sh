@@ -88,7 +88,7 @@ cp -R $InstallPath/Files/* $DigiHubHome
 chmod +x $ScriptPath/* $PythonPath/*
 
 # Check GPS device Installed
-printf 'Checking for GPS device... '
+printf 'Checking for GPS device ... '
 gps=$($PythonPath/gpstest.py)
 IFS=',' read -r gpsport gpsstatus <<< $gps
 
@@ -96,8 +96,8 @@ echo ""$gpsport $gpsstatus"
 exit 0
 
 if [[ "$gpsport" == *"dev"* ]]; then
- if [[ $gpsstatus" == "nodata" ]]; then printf '\nGPS device found but no data is being received. '; fi
- if [[ $gpsstatus" == "nofix" ]]; then printf '\nGPS device found but does not have a satellite fix. '; fi
+ if [[ "$gpsstatus" == "nodata" ]]; then printf '\nGPS device found but no data is being received. '; fi
+ if [[ ""$gpsstatus" == "nofix" ]]; then printf '\nGPS device found but does not have a satellite fix. '; fi
 fi
 if [[ "$gpsstatus" == "nodata" || ""$gpsstatus" == "nofix" ]]; then printf 'Using information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"; YnContinue; fi
 if [[ "$gpsport" == "nogps" ]]; then printf 'Not found!'
