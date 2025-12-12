@@ -11,9 +11,9 @@
 
 #warning
 
-# sudo rm -r $DigiHub
+sudo rm -rf $DigiHub
 
-# sudo apt -y purge 
+# uninstall packages etc. ==> sudo apt -y purge 
 
 # Remove Environment & PATH
 for i in "DigiHub"  "export venv_dir" "export Callsign" "export APRSPass" "export Lat" "export Lon" "export Grid" "sysinfo"; do

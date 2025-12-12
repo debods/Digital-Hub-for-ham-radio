@@ -7,6 +7,8 @@ Get curent position from GPS
 Version 1.0a
 
 Steve de Bode - KQ4ZCI - December 2025
+
+Output: Latitude,Longitude
 """
 
 try:
@@ -14,7 +16,7 @@ try:
  import serial
  import pynmea2
 except ModuleNotFoundError:
- venv_dir = os.getenv("venv_dir")
+ venv_dir = os.getenv("DigiHubvenv")
  print("\nPython virtual environmnet required to execute:")
  print(f"\nsource {venv_dir}/bin/activate\n")
  exit(1)

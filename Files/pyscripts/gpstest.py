@@ -8,7 +8,7 @@ Version 1.0a
 
 Steve de Bode - KQ4ZCI - December 2025
 
-Output: port,status
+Output: GPS port),GPS status)
 
 Exit codes:
   0 = working
@@ -31,10 +31,7 @@ from typing import Optional, Tuple
 import serial
 from serial.tools import list_ports
 
-
-# Strict NMEA shape: $BODY*HH
 NMEA_RE = re.compile(r"^\$(?P<body>[^*]+)\*(?P<ck>[0-9A-Fa-f]{2})\s*$")
-
 
 def nmea_checksum_ok(sentence: str) -> bool:
     m = NMEA_RE.match(sentence.strip())
@@ -47,14 +44,7 @@ def nmea_checksum_ok(sentence: str) -> bool:
         calc ^= ord(ch)
     return calc == given
 
-
 def parse_fix(sentence: str) -> Optional[bool]:
-    """
-    Returns:
-      True  = fix confirmed
-      False = explicitly no-fix
-      None  = unknown/not enough info
-    """
     s = sentence.strip()
     if not s.startswith("$"):
         return None
@@ -85,12 +75,7 @@ def parse_fix(sentence: str) -> Optional[bool]:
 
     return None
 
-
 def linux_ports() -> list[str]:
-    """
-    Linux-only realistic GPS-USB candidates.
-    Uses pyserial enumeration + glob fallback; de-dupes preserving order.
-    """
     ports: list[str] = []
 
     try:
@@ -111,18 +96,12 @@ def linux_ports() -> list[str]:
             out.append(dev)
     return out
 
-
 @dataclass
 class Result:
     port: str = ""
     status: str = "nogps"  # working|nofix|nodata|nogps
 
-
 def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool]:
-    """
-    Returns (Result, nmea_ok)
-    - nmea_ok=True means checksum-valid NMEA was seen at this baud (so caller should stop trying other bauds for this port)
-    """
     start = time.time()
     nmea_ok = False
 
@@ -147,10 +126,8 @@ def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool]:
                 f = parse_fix(s)
                 if f is True:
                     return Result(port, "working"), True
-                # keep listening; if we never see a fix, we'll return "nofix" below
 
     except (serial.SerialException, OSError):
-        # Keep attempted port in output; treat as no usable NMEA at this baud
         return Result(port, "nodata"), False
 
     if not nmea_ok:
@@ -158,21 +135,14 @@ def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool]:
 
     return Result(port, "nofix"), True
 
-
 def emit(r: Result) -> None:
     if r.status == "nogps":
         print("nogps,nogps")
     else:
         print(f"{r.port},{r.status}")
 
-
 def score(r: Result) -> int:
-    """
-    Higher is better.
-    Priority: working > nofix > nodata > nogps
-    """
     return {"working": 3, "nofix": 2, "nodata": 1, "nogps": 0}.get(r.status, 0)
-
 
 def main() -> int:
     if not sys.platform.startswith("linux"):
@@ -206,13 +176,11 @@ def main() -> int:
                 emit(r)
                 return 0
 
-            # Stop trying other bauds on THIS port once checksum-valid NMEA is seen
             if nmea_ok:
                 break
 
     emit(best)
     return {"working": 0, "nofix": 1, "nodata": 2, "nogps": 3}.get(best.status, 3)
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
