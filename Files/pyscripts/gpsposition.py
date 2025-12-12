@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-#
-# gpsposition.py
-# Get curent position fro GPS
-#
-# Version 1.0a
-#
-# Steve de Bode - KQ4ZCI - December 2025
-#
+"""
+gpsposition.py
+Get curent position from GPS
+
+Version 1.0a
+
+Steve de Bode - KQ4ZCI - December 2025
+"""
 
 try:
  import os 
