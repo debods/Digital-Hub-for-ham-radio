@@ -66,7 +66,7 @@ printf '\nThis may take some time ...\n\n'
 
 # Update OS
 printf 'Updating Operating System ... '
-source "$ScriptPath/update" >/dev/null 2>&1
+source "$ScriptPath"/update >/dev/null 2>&1
 printf 'Complete\n\n'
 
 # Setup and activate Python venv
@@ -82,7 +82,7 @@ fi
 printf 'Complete\n\n'
 
 # Copy files/directories into place & set permissions
-cp -R "$InstallPath"/Files/* $DigiHubHome
+cp -R "$InstallPath"/Files/* "$DigiHubHome"
 # html files
 chmod +x "$ScriptPath"/* "$PythonPath"/*
 
@@ -91,8 +91,9 @@ printf 'Checking for GPS device ... '
 gps=$("$PythonPath"/gpstest.py)
 IFS=',' read -r gpsport gpsstatus <<< "$gps"
 
-echo "$gpsport $gpsstatus"
-exit 0
+#
+#
+#
 
 if [[ "$gpsport" == *"dev"* ]]; then
  if [[ "$gpsstatus" == "nodata" ]]; then printf '\nGPS device found but no data is being received. '; fi
