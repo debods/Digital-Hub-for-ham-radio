@@ -53,6 +53,9 @@ if [ "$callsign" != "${1^^}" ]; then
  exit 1
 fi
 
+# Check for correct Callsign
+
+
 # Check for exising installation and warn
 if grep -qF "DigiHub" "$HomePath/.profile"; then
  printf '%b' "${RED}" 'Warning! ' "${NC}" 'There appears to be an existing installation of DigiHub which will be replaced if you continue.\n'
@@ -74,7 +77,7 @@ if [ ! -d "$venv_dir" ]; then
  source "$venv_dir/bin/activate"
  # Install Python Packages
   sudo apt -y install python3-pip >/dev/null 2>&1
-  sudo $venv_dir/bin/pip3 install callsign-regex >/dev/null 2>&1
+  sudo $venv_dir/bin/pip3 install pyserial >/dev/null 2>&1
 fi
 printf 'Complete\n\n'
 
