@@ -15,6 +15,6 @@ if [ "$#" -ne "1" ]; then
   exit 1
 fi
 
-aprspass=$(python3 $DigiHubPy/aprspass.py "$1")
+aprspass=$($DigiHubPy/aprspass.py "$1")
 
 printf  '\nThe APRS password for callsign %s is: %s\n\n' "$1" "$aprspass"

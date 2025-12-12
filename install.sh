@@ -2,7 +2,7 @@
 
 #
 # install.sh
-# DigiHub Configuration Script
+# DigiHub installation and configuration script
 #
 # Version 1.0a
 #
@@ -25,8 +25,6 @@ done
 }
 
 # Variables
-axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c10)
-CheckInstall=0
 RED='\e[31m'
 NC='\e[0m'  
     
@@ -46,7 +44,7 @@ if [ $? -ne 0 ]; then
  exit 1
 fi
 
-# Get Home QTH & Check Valid (available as checkcall script)
+# Check Valid Callsign (full information available as checkcall script)
 qth=$(curl -s "https://api.hamdb.org/v1/$1/csv/$1")
 IFS=',' read -r callsign licenseclass licenseexpiry grid lat lon status forename initial surname suffix street town state zip country <<< "$qth"
 
@@ -55,37 +53,8 @@ if [ "$callsign" != "${1^^}" ]; then
  exit 1
 fi
 
-fullname="$forename $initial $surname"; fullname=$(echo "$fullname" | xargs)
-address="$street, $town, $state $zip $country"
-
-# Convert License Class
-case "$licenseclass" in "T") licenseclass="Technician" ;; "G") licenseclass="General" ;; "E") licenseclass="Extra" ;; "N") licesnseclass="Novice" ;; "A") licenseclass "Advanced" ;; *) licenseclass="Station Callsign" ;; esac
-
-# Convert License Status
-case "$status" in "A") status="Active" ;; "E") status="Expired" ;; "P") status="Pending" ;; *) status="Unknown" ;; esac
-
-# Check for correct installation information
-printf '\nInstalling DigiHub in %s' "$DigiHubHome"
-printf '\nUsing the following information:\n'
-printf '\nCallsign\t%s\nLicense:\t%s expires %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n' "$callsign" "$licenseclass" "$licenseexpiry" "$status" "$fullname" "$address" "$grid" "$lat" "$lon"
- 
-# Check GPS device Installed
-# run gpstest (remember it is currently in the $InstallPath/Files/pyscripts folder)
-# if found run gpsposition
-# option to use current position or FCC
-
-# gps=$(python3 $InstallPath/Files/pyscripts/gpstest.py)
-# IFS=',' read -r gpslat gpslon <<< $gps
-# if 
-
-printf '\nWork in Progress if GPS installed - current lat lon can be used to calculate grid\n' 
-
-YnContinue
-
 # Check for exising installation and warn
-if grep -q "export Callsign=" "$HomePath/.profile"; then ((CheckInstall++)); fi
-if [ -d "$venv_dir" ]; then ((CheckInstall++)); fi
-if [[ $CheckInstall -gt 0 ]]; then
+if grep -qF "DigiHub" "$HomePath/.profile"; then
  printf '%b' "${RED}" 'Warning! ' "${NC}" 'There appears to be an existing installation of DigiHub which will be replaced if you continue.\n'
  YnContinue
  # run uninstaller
@@ -93,50 +62,73 @@ fi
 
 printf '\nThis may take some time ...\n\n' 
 
-# Copy files/directories into place & set Permissions
+# Update OS
+printf 'Updating Operating System ... '
+source $ScriptPath/update >/dev/null 2>&1
+printf 'Complete\n\n'
+
+# Setup and activate Python venv
+printf 'Configuring Python ... '
+if [ ! -d "$venv_dir" ]; then
+ python3 -m venv "$venv_dir" >/dev/null 2>&1
+ source "$venv_dir/bin/activate"
+ # Install Python Packages
+  sudo apt -y install python3-pip >/dev/null 2>&1
+  sudo $venv_dir/bin/pip3 install callsign-regex >/dev/null 2>&1
+fi
+printf 'Complete\n\n'
+
+# Copy files/directories into place & set permissions
 cp -R $InstallPath/Files $DigiHubHome
 # html files
 chmod +x $ScriptPath/* $PythonPath/*
 
-# Generate APRS password
-aprspass=$(python3 $PythonPath/aprspass.py "$callsign")
+# Check GPS device Installed
+gps=$($PythonPath/gpstest.py)
+IFS=',' read -r gpsport gpsstatus <<< $gps
+if [[ "$gpsport" == *"dev"* ]]; then
+ if [[ $gpsstatus" == "nodata" ]]; then printf '\nGPS device found but no data is being received. '; fi
+ if [[ $gpsstatus" == "nofix" ]]; then printf '\nGPS device found but does not have a satellite fix. '; fi
+fi
+if [[ $gpsstatus" == "nodata" || [[ $gpsstatus" == "nofix" ]] then; printf 'Using information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"; fi
+YnContinue
+
+# Option to use current location from GPS (available as changelocale script)
+if [[ $gpsstatus" == "working" ]]; then
+ gpsposition=$($PythonPath/gpsposition.py)
+ IFS=',' read -r gpslat gpslon <<< $gpsposition
+ hamgrid=$(python3 $DigiHubPy/hamgrid.py "$gpslat" "$gpslon")
+ printf "\nGPS device found and working - Current Latitude: %s Longitude: %s Grid: %s\n' "$gpslat" "$gpslon" "$hamgrid"
+ while true; do
+  printf '\nWould you like to ise current location or home QTH (C/q) '; read -n1 -r response
+  case $response in
+    C|c) lat=gpslat; lon=gpslon; grid=hamgrid ;; Q|q) break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+
+# Generate aprspass and axnodepass
+aprspass=$($PythonPath/aprspass.py "$callsign")
+axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)
 
 # Set Environment & PATH
-for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "export DigiHubPy=$PythonPath" "export DigiHubvenv=$venv_dir" "export DigiHubcall=$callsign" "export DigiHubAPRS=$aprspass" "export DigiHubLat=$lat" "export DigiHubLon=$lon" "export DigiHubgrid=$grid" "PATH=$ScriptPath:$PythonPath:\$PATH" "clear; sysinfo"; do
+for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "export DigiHubPy=$PythonPath" "export DigiHubvenv=$venv_dir" "export DigiHubcall=$callsign" "export DigiHubaprs=$aprspass" "export DigiHubaxnode=$axnodepass" "export DigiHubLat=$lat" "export DigiHubLon=$lon" "export DigiHubgrid=$grid" "PATH=$ScriptPath:$PythonPath:\$PATH" "clear; sysinfo"; do
 if ! grep -qF "$i" "$HomePath/.profile"; then
  printf '\n%s' "$i" >> "$HomePath/.profile"
 fi
 done
 printf '\n' >> "$HomePath/.profile"
 
-# Update OS
-printf 'Updating Operating System ... '
-source $ScriptPath/update >/dev/null 2>&1
-printf 'Complete\n\n'
-
-# Setup Python Virtual Environment
-printf 'Configuring Python ... '
-if [ ! -d "$venv_dir" ]; then
- python3 -m venv "$venv_dir" >/dev/null 2>&1
- source "$venv_dir/bin/activate"
-# Install Python Packages
- sudo apt -y install python3-pip >/dev/null 2>&1
- sudo $venv_dir/bin/pip3 install callsign-regex >/dev/null 2>&1
-fi
- deactivate
-printf 'Complete\n\n'
-
 # Install Packages
+sudo apt -y install lastlog2 >/dev/null 2>&1
+
 # Web Server
 
 # Install exceptions for bookworm
 if [[ "$(cat /etc/os-release | grep PRETTY)" != *"bookworm"* ]]; then
- sudo apt -y install lastlog2 >/dev/null 2>&1
+ 
 fi
 
 # Reboot
 while true; do
   printf '\nReboot Now (Y/n) '; read -n1 -r response
   case $response in
-    Y|y) sudo reboot; break ;; N|n) printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+    Y|y) deactivate; sudo reboot ;; N|n) deactivate; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
 done
