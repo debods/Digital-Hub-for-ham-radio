@@ -77,6 +77,7 @@ if [ ! -d "$venv_dir" ]; then
  source "$venv_dir/bin/activate"
  # Install Python Packages
   sudo apt -y install python3-pip >/dev/null 2>&1
+  printf 'Installing required Python packages ... '
   sudo $venv_dir/bin/pip3 install pyserial >/dev/null 2>&1
 fi
 printf 'Complete\n\n'
@@ -100,7 +101,7 @@ if [[ $gpsstatus" == "working" ]]; then
  gpsposition=$($PythonPath/gpsposition.py)
  IFS=',' read -r gpslat gpslon <<< $gpsposition
  hamgrid=$(python3 $DigiHubPy/hamgrid.py "$gpslat" "$gpslon")
- printf "\nGPS device found and working - Current Latitude: %s Longitude: %s Grid: %s\n' "$gpslat" "$gpslon" "$hamgrid"
+ printf '\nGPS device found and working - Current Latitude: %s Longitude: %s Grid: %s\n' "$gpslat" "$gpslon" "$hamgrid"
  while true; do
   printf '\nWould you like to use your current location or home QTH for the installation (C/q)? '; read -n1 -r response
   case $response in
