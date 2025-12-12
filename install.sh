@@ -107,7 +107,7 @@ if [[ "$gpsstatus" == "working" ]]; then
  while true; do
   printf '\nWould you like to use your current location or home QTH for the installation (C/q)? '; read -n1 -r response
   case $response in
-    C|c) lat=gpslat; lon=gpslon; grid=hamgrid ;; Q|q) break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+    C|c) lat=gpslat; lon=gpslon; grid=hamgrid; break ;; Q|q) break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
  done
 fi
 
