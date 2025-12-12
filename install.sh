@@ -66,7 +66,7 @@ printf '\nThis may take some time ...\n\n'
 
 # Update OS
 printf 'Updating Operating System ... '
-source $ScriptPath/update >/dev/null 2>&1
+source "$ScriptPath/update" >/dev/null 2>&1
 printf 'Complete\n\n'
 
 # Setup and activate Python venv
