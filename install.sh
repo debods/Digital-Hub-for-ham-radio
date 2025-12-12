@@ -100,9 +100,9 @@ if [[ "$gpsport" == "nogps" ]]; then printf 'Not found!'; fi
 
 # Option to use current location from GPS (available as changelocale script)
 if [[ "$gpsstatus" == "working" ]]; then
- gpsposition=$($PythonPath/gpsposition.py)
- IFS=',' read -r gpslat gpslon <<< $gpsposition
- hamgrid=$(python3 $DigiHubPy/hamgrid.py "$gpslat" "$gpslon")
+ gpsposition=$("$PythonPath"/gpsposition.py)
+ IFS=',' read -r gpslat gpslon <<< "$gpsposition"
+ hamgrid=$("$PythonPath"/hamgrid.py "$gpslat" "$gpslon")
  printf '\nGPS device found and working - Current Latitude: %s Longitude: %s Grid: %s\n' "$gpslat" "$gpslon" "$hamgrid"
  while true; do
   printf '\nWould you like to use your current location or home QTH for the installation (C/q)? '; read -n1 -r response
@@ -112,7 +112,7 @@ if [[ "$gpsstatus" == "working" ]]; then
 fi
 
 # Generate aprspass and axnodepass
-aprspass=$($PythonPath/aprspass.py "$callsign")
+aprspass=$("$PythonPath"/aprspass.py "$callsign")
 axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)
 
 # Set Environment & PATH
