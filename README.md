@@ -10,6 +10,8 @@ GPS Devices
 
 DigiHub will detect and use a correctly installed and working GPS device.
 
+can be installed for and individual or club callsign
+
 
 DigiHub webserver
 
