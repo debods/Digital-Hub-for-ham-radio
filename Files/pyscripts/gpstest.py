@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 
 """
-gpstest.py (Linux only)
+gpstest.py
+Test for installed and working GPS device
 
-Output (one line, comma-delimited):
-  port,status
+Version 1.0a
 
-Rules:
-- port first, status second
-- If nothing is found at all, output:
-    nogps,nogps
+Steve de Bode - KQ4ZCI - December 2025
 
-Behavior change requested:
-- Stop scanning other baud rates once a given port produces checksum-valid NMEA
-  (i.e., once that port yields "working" or "nofix", we do NOT try more bauds on that port)
+Output: port,status
 
 Exit codes:
   0 = working
