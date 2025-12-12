@@ -1,5 +1,8 @@
 Digital Hub for ham radio (DigiHub)
 
+DigiHub is not an application or environment, it is a curated collection of <blah>
+
+
 DigiHub is designed to be an alternative to the popular DigiPi which is an excellent implementation (but has limitations) and, is highly recommended as a starting point for the less tech savvy or those setting out on the digital ham path.
 
 DigiHub, builds on the DigiPi concept and is designed to be installed on an existing Debian system. The installation script has been built and tested on Debian trixie 64-bit meaning it can be installed on Raspberry Pi OS (Pi Zero 2W, 3, 4 or, 5).
@@ -37,6 +40,3 @@ git clone <DigiHub repository>
 cd <Install Folder>
 chmod +x install.sh <callsign> e.g. ./install.sh kq4zciy
 ./install.sh
-
-either reboot (script option)
-source ~/.profile

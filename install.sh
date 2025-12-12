@@ -19,9 +19,9 @@ fi
 
 function YnContinue {
  while true; do
- printf 'Proceed (Y/n)? '; read -n1 -r response
- case $response in Y|y) printf '\n'; break ;; N|n) printf '\nInstallation aborted.\n'; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
-done
+  printf 'Proceed (Y/n)? '; read -n1 -r response
+  case $response in Y|y) printf '\n'; break ;; N|n) printf '\nInstallation aborted.\n'; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
+ done
 }
 
 # Variables
