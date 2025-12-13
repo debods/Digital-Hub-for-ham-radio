@@ -68,9 +68,9 @@ remsecs=$((remsecs % 60))
 # Output
 colb='\033[34m'; colr='\e[31m'; ncol='\033[0m'; clear
 if grep -q "Raspberry Pi" /proc/cpuinfo; then
-  echo -e " ${colb}Model${ncol}                $model"
-  echo -e " ${colb}Serial Number${ncol}        $(cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2)"
-  echo
+ echo -e " ${colb}Model${ncol}                $model"
+ echo -e " ${colb}Serial Number${ncol}        $(cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2)"
+ echo
 fi
 echo -e " ${colb}Operating System${ncol}     $(cat /etc/os-release | grep PRETTY | sed 's/^[^"]*"//' | tr -d '"')"
 echo -e " ${colb}Kernel${ncol}               $(uname -r)"
@@ -84,4 +84,6 @@ echo -e " ${colb}Timezone${ncol}             $(date +'UTC %z (%Z)')"
 echo -e " ${colb}System Time${ncol}          $(date +'%A,%e %B %Y, %r')"
 echo -e " ${colb}Uptime${ncol}               $dd day(s) $hh hours(s) $mm minute(s) $remsecs second(s)"
 echo -e " ${colb}Last Login${ncol}           ${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, ${lastinfo[4]} ${lastinfo[5]} ${lastinfo[8]}"; echo
-echo -e " ${colb}DigiHub \\u00A9 KQ4ZCI 2025 installed for Callsign ${colr}$DigiHubcall${ncol} at coordinates Latitude: ${colr}$DigiHubLat${ncol} Longitude: ${colr}$DigiHubLon${ncol} Grid: ${colr}$DigiHubgrid${ncol} "; echo
+echo -e " ${colb}DigiHub \\u00A9 KQ4ZCI 2025${ncol}"
+echo -e " ${colb}Installed for${ncol}        Callsign: ${colr}$DigiHubcall${ncol}"
+echo -e " ${colb}Coordinates${ncol}          Latitude: ${colr}$DigiHubLat${ncol} Longitude: ${colr}$DigiHubLon${ncol} Grid: ${colr}$DigiHubgrid${ncol} "; echo
