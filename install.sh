@@ -20,7 +20,7 @@ fi
 function YnContinue {
  while true; do
   printf 'Continue (Y/n)? '; read -n1 -r response
-  case $response in Y|y) printf '\n'; break ;; N|n) printf '\nInstallation aborted.\n'; deactivate >/dev/null 2>&1; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
+  case $response in Y|y) printf '\n\n'; break ;; N|n) printf '\nInstallation aborted.\n'; deactivate >/dev/null 2>&1; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
  done
 }
 
@@ -52,7 +52,7 @@ if [ "$callsign" != "${1^^}" ]; then
 fi
 
 # Check for correct Callsign
-printf '%b' '\nThis will install DigiHub for the Callsign "' "$colb" "${1^^}" "$ncol" '"\n\n'
+printf '%b' '\nThis will install DigiHub for callsign "' "$colb" "${1^^}" "$ncol" '"\n\n'
 YnContinue
 
 # Check for exising installation and warn
@@ -137,5 +137,5 @@ sudo apt -y install lastlog2 >/dev/null 2>&1
 # Reboot
 while true; do
   printf '\nReboot Now (Y/n) '; read -n1 -r response; case $response in
-    Y|y) printf '\n'; deactivate; sudo reboot; break ;; N|n) deactivate; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+    Y|y) printf '\n'; deactivate; sudo reboot ;; N|n) deactivate; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
 done

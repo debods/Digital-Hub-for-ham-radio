@@ -10,4 +10,11 @@
 #
 
 
-Remeber changes in .profile might be needed in venv/bin/activate
+# Remeber changes in .profile might be needed in venv/bin/activate
+
+DigiHubGPSport
+DigiHubcall
+DigiHubaprs #APRS Password
+DigiHubLat
+DigiHubLon
+DigiHubgrid
