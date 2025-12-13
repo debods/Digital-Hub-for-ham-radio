@@ -72,12 +72,14 @@ printf 'Complete\n\n'
 # Setup and activate Python
 printf 'Configuring Python ... '
 if [ ! -d "$venv_dir" ]; then
+ export 
  python3 -m venv "$venv_dir" >/dev/null 2>&1
  source "$venv_dir/bin/activate"
  # Install Python Packages
   sudo apt -y install python3-pip >/dev/null 2>&1
   printf 'Installing required Python packages ... '
   sudo "$venv_dir"/bin/pip3 install pynmea2 pyserial >/dev/null 2>&1
+ deactivate
 fi
 printf 'Complete\n\n'
 
@@ -101,13 +103,10 @@ if [[ "$gpsport" == "nogps" ]]; then printf 'Not found!\n'; fi
 
 # Option to use current location from GPS (available in editconfig script)
 if [[ "$gpsstatus" == "working" ]]; then
+ export DigiHubGPSport=$gpsport"; source "$venv_dir/bin/activate"
  gpsposition=$("$PythonPath"/gpsposition.py)
  IFS=',' read -r gpslat gpslon <<< "$gpsposition"
-
-echo "Varaible Dump GPS Lat $gpslat Lon $gpslon"
-
  hamgrid=$("$PythonPath"/hamgrid.py $gpslat $gpslon)
-
  printf '\nGPS device found and working - Current Latitude: %s Longitude: %s Grid: %s\n' "$gpslat" "$gpslon" "$hamgrid"
  while true; do
   printf '\nWould you like to use your current location or home QTH for the installation (C/q)? '; read -n1 -r response
