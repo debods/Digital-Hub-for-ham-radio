@@ -66,22 +66,22 @@ mm=$((remsecs / 60))
 remsecs=$((remsecs % 60))
 
 # Output
-colo='\033[34m'; noco='\033[0m'
+colb='\033[34m'; colr='\e[31m'; ncol='\033[0m'; clear
 if grep -q "Raspberry Pi" /proc/cpuinfo; then
-  echo -e " ${colo}Model${noco}                $model"
-  echo -e " ${colo}Serial Number${noco}        $(cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2)"
+  echo -e " ${colb}Model${ncol}                $model"
+  echo -e " ${colb}Serial Number${ncol}        $(cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2)"
   echo
 fi
-echo -e " ${colo}Operating System${noco}     $(cat /etc/os-release | grep PRETTY | sed 's/^[^"]*"//' | tr -d '"')"
-echo -e " ${colo}Kernel${noco}               $(uname -r)"
-echo -e " ${colo}Shell Version${noco}        $(echo $BASH_VERSION)"; echo
-echo -e " ${colo}CPU${noco}                  $cpuname $cpucore Cores @ $cpuspeed MHz ($cpuscale scaling) $cpuload Load"
-echo -e " ${colo}Memory${noco}               $memtotgb GB Total, $memusegb GB Used, $memfregb GB ($memfrepct%) Free"
-echo -e " ${colo}Disk${noco}                 $disksizegb GB Total, $diskavaigb GB Available, $diskusedgb GB ($diskupct) Used"; echo
-echo -e " ${colo}Hostname${noco}             $(hostname -f)"
-echo -e " ${colo}IP Addresses${noco}         Internal: $(ip a | grep -w inet | grep -v 127| awk '{ printf "%s ",$2 }')External: $(wget -q -O - http://icanhazip.com/ | tail)"; echo
-echo -e " ${colo}Timezone${noco}             $(date +'UTC %z (%Z)')"
-echo -e " ${colo}System Time${noco}          $(date +'%A,%e %B %Y, %r')"
-echo -e " ${colo}Uptime${noco}               $dd day(s) $hh hours(s) $mm minute(s) $remsecs second(s)"
-echo -e " ${colo}Last Login${noco}           ${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, ${lastinfo[4]} ${lastinfo[5]} ${lastinfo[8]}"; echo
-echo -e " ${colo}DigiHub \\u00A9 KQ4ZCI 2025$ -n installed for Callsign $callsign{noco}"; echo
+echo -e " ${colb}Operating System${ncol}     $(cat /etc/os-release | grep PRETTY | sed 's/^[^"]*"//' | tr -d '"')"
+echo -e " ${colb}Kernel${ncol}               $(uname -r)"
+echo -e " ${colb}Shell Version${ncol}        $(echo $BASH_VERSION)"; echo
+echo -e " ${colb}CPU${ncol}                  $cpuname $cpucore Cores @ $cpuspeed MHz ($cpuscale scaling) $cpuload Load"
+echo -e " ${colb}Memory${ncol}               $memtotgb GB Total, $memusegb GB Used, $memfregb GB ($memfrepct%) Free"
+echo -e " ${colb}Disk${ncol}                 $disksizegb GB Total, $diskavaigb GB Available, $diskusedgb GB ($diskupct) Used"; echo
+echo -e " ${colb}Hostname${ncol}             $(hostname -f)"
+echo -e " ${colb}IP Addresses${ncol}         Internal: $(ip a | grep -w inet | grep -v 127| awk '{ printf "%s ",$2 }')External: $(wget -q -O - http://icanhazip.com/ | tail)"; echo
+echo -e " ${colb}Timezone${ncol}             $(date +'UTC %z (%Z)')"
+echo -e " ${colb}System Time${ncol}          $(date +'%A,%e %B %Y, %r')"
+echo -e " ${colb}Uptime${ncol}               $dd day(s) $hh hours(s) $mm minute(s) $remsecs second(s)"
+echo -e " ${colb}Last Login${ncol}           ${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, ${lastinfo[4]} ${lastinfo[5]} ${lastinfo[8]}"; echo
+echo -e " ${colb}DigiHub \\u00A9 KQ4ZCI 2025 installed for Callsign ${colr}$DigiHubcall${ncol} at coordinates Latitude: ${colr}$DigiHubLat${ncol} Longitude: ${colr}$DigiHubLon${ncol} Grid: ${colr}$DigiHubgrid${ncol} "; echo

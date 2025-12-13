@@ -25,8 +25,7 @@ function YnContinue {
 }
 
 # Variables
-RED='\e[31m'
-NC='\e[0m'  
+colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
     
 # Script Directory Variables
 WebPath="/var/www/html"
@@ -57,7 +56,7 @@ fi
 
 # Check for exising installation and warn
 if grep -qF "DigiHub" "$HomePath/.profile"; then
- printf '%b' "${RED}" 'Warning! ' "${NC}" 'There appears to be an existing installation of DigiHub which will be replaced if you continue.\n'
+ printf '%b' "${colr}" 'Warning! ' "${ncol}" 'There appears to be an existing installation of DigiHub which will be replaced if you continue.\n'
  YnContinue
  # run uninstaller
 fi
@@ -108,9 +107,9 @@ if [[ "$gpsstatus" == "working" ]]; then
  hamgrid=$("$PythonPath"/hamgrid.py "$gpslat" "$gpslon")
  printf 'found and working\nCurrent coordinates\tLatitude: %s Longitude: %s Grid: %s\nFCC coordinates:\tLatitude: %s Longitude: %s Grid: %s\n' "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
  while true; do
-  printf '\nWould you like to use your current location or home QTH from the FCC for the installation (C/q)? '; read -n1 -r response
+  printf '\nWould you like to use your current location or home QTH from the FCC for the installation (C/f)? '; read -n1 -r response
   case $response in
-    C|c) lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;; Q|q) break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+    C|c) lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;; Q|q) break ;; *) printf '\nInvalid response, please select c (or C) for Current location or f (or F) for FCC location' ;; esac
  done
 fi
 
@@ -136,5 +135,5 @@ sudo apt -y install lastlog2 >/dev/null 2>&1
 while true; do
   printf '\nReboot Now (Y/n) '; read -n1 -r response
   case $response in
-    Y|y) deactivate; sudo reboot ;; N|n) deactivate; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+    Y|y) deactivate; sudo reboot; break ;; N|n) deactivate; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
 done
