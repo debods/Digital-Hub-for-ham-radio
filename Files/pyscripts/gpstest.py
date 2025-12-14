@@ -8,7 +8,7 @@ Version 1.0a
 
 Steve de Bode - KQ4ZCI - December 2025
 
-Input:	None (GPS Device)
+Input:  None (GPS Device)
 Output: GPS port,GPS status
 
 Exit codes:
@@ -24,6 +24,7 @@ import argparse
 import glob
 import os
 import re
+import stat
 import sys
 import time
 from dataclasses import dataclass
@@ -32,7 +33,10 @@ from typing import Optional, Tuple
 import serial
 from serial.tools import list_ports
 
+
+# Strict NMEA shape: $BODY*HH
 NMEA_RE = re.compile(r"^\$(?P<body>[^*]+)\*(?P<ck>[0-9A-Fa-f]{2})\s*$")
+
 
 def nmea_checksum_ok(sentence: str) -> bool:
     m = NMEA_RE.match(sentence.strip())
@@ -45,13 +49,8 @@ def nmea_checksum_ok(sentence: str) -> bool:
         calc ^= ord(ch)
     return calc == given
 
+
 def parse_fix(sentence: str) -> Optional[bool]:
-    """
-    Returns:
-      True  = fix confirmed
-      False = explicitly no-fix
-      None  = unknown/not enough info
-    """
     s = sentence.strip()
     if not s.startswith("$"):
         return None
@@ -67,10 +66,10 @@ def parse_fix(sentence: str) -> Optional[bool]:
     msg_type = parts[0][-3:]  # RMC, GGA, etc.
 
     if msg_type == "RMC" and len(parts) > 2:
-        status = parts[2].strip().upper()
-        if status == "A":
+        status_field = parts[2].strip().upper()
+        if status_field == "A":
             return True
-        if status == "V":
+        if status_field == "V":
             return False
         return None
 
@@ -82,11 +81,16 @@ def parse_fix(sentence: str) -> Optional[bool]:
 
     return None
 
+
+def is_char_device(path: str) -> bool:
+    try:
+        st = os.stat(path)
+        return stat.S_ISCHR(st.st_mode)
+    except OSError:
+        return False
+
+
 def linux_ports() -> list[str]:
-    """
-    Linux-only realistic GPS-USB candidates.
-    Uses pyserial enumeration + glob fallback; de-dupes preserving order.
-    """
     ports: list[str] = []
 
     try:
@@ -103,26 +107,28 @@ def linux_ports() -> list[str]:
         if dev in seen:
             continue
         seen.add(dev)
-        if os.path.exists(dev):
+        if os.path.exists(dev) and is_char_device(dev):
             out.append(dev)
     return out
+
 
 @dataclass
 class Result:
     port: str = ""
     status: str = "nogps"  # working|nofix|nodata|nogps
 
-def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool]:
+
+def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool, bool]:
     """
-    Returns (Result, nmea_ok)
-    - nmea_ok=True means checksum-valid NMEA was seen at this baud (so caller should stop trying other bauds for this port)
+    Returns (Result, nmea_ok, opened_ok)
     """
     start = time.time()
     nmea_ok = False
 
     try:
-        with serial.Serial(port, baud, timeout=0.4) as ser:
-            time.sleep(0.2)
+        with serial.Serial(port, baud, timeout=0.25) as ser:
+            opened_ok = True
+            time.sleep(0.05)
 
             while time.time() - start < listen:
                 line = ser.readline()
@@ -138,32 +144,26 @@ def sniff(port: str, baud: int, listen: float) -> Tuple[Result, bool]:
 
                 nmea_ok = True
 
-                f = parse_fix(s)
-                if f is True:
-                    return Result(port, "working"), True
-                # keep listening; if we never see a fix, we'll return "nofix" below
+                if parse_fix(s) is True:
+                    return Result(port, "working"), True, opened_ok
+
+            if nmea_ok:
+                return Result(port, "nofix"), True, opened_ok
+
+            return Result("", "nodata"), False, opened_ok
 
     except (serial.SerialException, OSError):
-        # Keep attempted port in output; treat as no usable NMEA at this baud
-        return Result(port, "nodata"), False
+        return Result("", "nogps"), False, False
 
-    if not nmea_ok:
-        return Result(port, "nodata"), False
-
-    return Result(port, "nofix"), True
 
 def emit(r: Result) -> None:
     if r.status == "nogps":
         print("nogps,nogps")
+    elif r.status == "nodata":
+        print("nodata,nodata")
     else:
         print(f"{r.port},{r.status}")
 
-def score(r: Result) -> int:
-    """
-    Higher is better.
-    Priority: working > nofix > nodata > nogps
-    """
-    return {"working": 3, "nofix": 2, "nodata": 1, "nogps": 0}.get(r.status, 0)
 
 def main() -> int:
     if not sys.platform.startswith("linux"):
@@ -171,38 +171,38 @@ def main() -> int:
         return 3
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--listen", type=float, default=6.0,
-                    help="Seconds to listen per (port,baud) attempt")
-    ap.add_argument("--bauds", default="4800,9600,19200,38400,57600,115200",
-                    help="Comma-separated baud rates to try")
+    ap.add_argument("--listen", type=float, default=2.0)
+    ap.add_argument("--bauds", default="9600,4800,115200,38400,19200,57600")
     ap.add_argument("--debug", action="store_true")
     args = ap.parse_args()
 
     bauds = [int(x.strip()) for x in args.bauds.split(",") if x.strip()]
     ports = linux_ports()
 
-    best = Result("", "nogps")
+    opened_any = False
 
     for port in ports:
         for baud in bauds:
             if args.debug:
                 print(f"Trying {port}@{baud}", file=sys.stderr)
 
-            r, nmea_ok = sniff(port, baud, args.listen)
+            r, nmea_ok, opened_ok = sniff(port, baud, args.listen)
+            opened_any |= opened_ok
 
-            if score(r) > score(best):
-                best = r
-
-            if r.status == "working":
+            if r.status in ("working", "nofix"):
                 emit(r)
-                return 0
+                return 0 if r.status == "working" else 1
 
-            # Stop trying other bauds on THIS port once checksum-valid NMEA is seen
             if nmea_ok:
                 break
 
-    emit(best)
-    return {"working": 0, "nofix": 1, "nodata": 2, "nogps": 3}.get(best.status, 3)
+    if opened_any:
+        emit(Result("", "nodata"))
+        return 2
+
+    emit(Result("", "nogps"))
+    return 3
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

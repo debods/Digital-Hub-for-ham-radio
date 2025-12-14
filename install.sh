@@ -82,41 +82,46 @@ if [ ! -d "$venv_dir" ]; then
 fi
 printf 'Complete\n\n'
 
-# Copy files/directories into place & set permissions
-cp -R "$InstallPath"/Files/* "$DigiHubHome"
-# html files
-chmod +x "$ScriptPath"/* "$!PythonPath"/*
-
 # Check GPS device Installed
 printf 'Checking for GPS device ... '
 gps=$(python3 "$InstallPath"/Files/pyscripts/gpstest.py)
+gpscode=$?
 IFS=',' read -r gpsport gpsstatus <<< "$gps"
 
-if [[ "$gpsport" == *"dev"* ]]; then
- if [[ "$gpsstatus" == "nodata" ]]; then printf 'GPS device found but no data is being received. '; fi
- if [[ "$gpsstatus" == "nofix" ]]; then printf 'GPS device found but does not have a satellite fix. '; fi
-fi
-if [[ "$gpsstatus" == "nodata" || "$gpsstatus" == "nofix" ]]; then printf '\nUsing information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"; YnContinue; fi
-# need to cleanup if Nn response - run uninstaller?
-if [[ "$gpsport" == "nogps" ]]; then printf 'Not found!\n'; fi
-
-# Option to use current location from GPS (available in editconfig script)
-if [[ "$gpsstatus" == "working" ]]; then
- export DigiHubGPSport="$gpsport"; source "$venv_dir/bin/activate"
- gpsposition=$(python3 "$InstallPath"/Files/pyscripts/gpsposition.py)
- IFS=',' read -r gpslat gpslon <<< "$gpsposition"
- hamgrid=$(python3 "$InstallPath"/Files/pyscripts/hamgrid.py "$gpslat" "$gpslon")
- printf 'found and working\nCurrent coordinates\tLatitude: %s Longitude: %s Grid: %s\nFCC coordinates:\tLatitude: %s Longitude: %s Grid: %s\n' "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
- while true; do
-  printf '\nWould you like to use your current location or home QTH from the FCC for the installation (C/f)? '; read -n1 -r response
-  case $response in
+case "$gpscode" in
+ 0) # Option to use current location from GPS (available in editconfig script)
+  export DigiHubGPSport="$gpsport"; source "$venv_dir/bin/activate"
+  gpsposition=$(python3 "$InstallPath"/Files/pyscripts/gpsposition.py)
+  IFS=',' read -r gpslat gpslon <<< "$gpsposition"
+  hamgrid=$(python3 "$InstallPath"/Files/pyscripts/hamgrid.py "$gpslat" "$gpslon")
+  printf 'found on port %s and ready.\nCurrent coordinates\tLatitude: %s Longitude: %s Grid: %s\nFCC coordinates:\tLatitude: %s Longitude: %s Grid: %s\n' "$gpsport" "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
+  while true; do
+   printf '\nWould you like to use your current location or home QTH from the FCC for the installation (C/f)? '; read -n1 -r response
+   case $response in
     C|c) printf '\n'; lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;; F|f) break ;; *) printf '\nInvalid response, please select c (or C) for Current location or f (or F) for FCC location' ;; esac
- done
-fi
+   done
+  ;;
+ 1) printf 'but does not have a satellite fix.\n' ;;
+ 2) printf 'but no data is being received.\n' ;;
+ 3) printf 'not found!\n' ;;
+ *) ;;
+esac
+
+case "$gpscode" in 
+ 1|2|3|*)
+  printf '\nUsing information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
+  YnContinue
+  ;;
+esac
 
 # Generate aprspass and axnodepass
 aprspass=$(python3 "$InstallPath"/Files/pyscripts/aprspass.py "$callsign")
 axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)
+
+# Copy files/directories into place & set permissions
+cp -R "$InstallPath"/Files/* "$DigiHubHome"
+# html files
+chmod +x "$ScriptPath"/* "$PythonPath"/*
 
 # Set Environment & PATH
  # Clean existing and backup .profile
@@ -137,5 +142,5 @@ sudo apt -y install lastlog2 >/dev/null 2>&1
 # Reboot
 while true; do
   printf '\nReboot Now (Y/n) '; read -n1 -r response; case $response in
-    Y|y) deactivate; sudo reboot; printf '\nRebooting'cd  ;; N|n) deactivate; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+    Y|y) sudo reboot; printf '\nRebooting'cd  ;; N|n) deactivate >/dev/null 2>&1; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; break ;; *) printf '\nInvalid response, please select Y/n' ;; esac
 done
