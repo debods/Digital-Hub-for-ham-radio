@@ -67,7 +67,7 @@ if [ "${1^^}" == "NON-US" ]; then
 fi
 
 # Check for correct Callsign
-printf '%b' '\n\nnThis will install DigiHub for callsign "' "$colb" "${1^^}" "$ncol" '"\nIf this is incorrect select n (or N) and re-run the installer with the correct callsign.\n'
+printf '%b' '\n\nDigiHub will be installed for callsign "' "$colb" "${1^^}" "$ncol" '"\nIf this is incorrect select n (or N) and re-run the installer with the correct callsign.\n'
 YnContinue
 
 # Check for exising installation and warn
