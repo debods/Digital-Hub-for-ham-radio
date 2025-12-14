@@ -1,4 +1,4 @@
-#!/bin bash
+#!/bin/bash
 
 #
 # gpsposition
@@ -9,11 +9,13 @@
 # Steve de Bode - KQ4ZCI - December 2025
 #
 
+if [ "$DigiHubGPSport" == "nogps" ]; then printf '\nNo GPS device is configured for DigiHub, please run editconfig if this is incorrect.\n\n'; exit 1; fi
+
 source "$DigiHubvenv/bin/activate"
-gpsposition=$($DigiHubPy/gpsposition.py)
+gpsposition=$("$DigiHubPy"/gpsposition.py)
 IFS=',' read -r lat lon <<< "$gpsposition"
-hamgrid=$($DigiHubPy/hamgrid.py "$lat" "$lon")
+hamgrid=$("$DigiHubPy"/hamgrid.py "$lat" "$lon")
 IFS=',' read -r grid <<< "$hamgrid"
 deactivate
 
-printf  '\nCurrent Location: Latitude: %s Longitude: %s Grid: %s\n\n' "$lat" "$lon" "$grid"
+printf  '\nCurrent Location: Latitude: %s Longitude: %s Grid: %s.\n\n' "$lat" "$lon" "$grid"

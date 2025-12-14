@@ -1,42 +1,47 @@
 #!/usr/bin/env python3
 
 try:
- import os
- import serial
- import pynmea2
+        import os
+        import sys
+        import serial
+        import pynmea2
 except ModuleNotFoundError:
- print("\nPython virtual environmnet required to execute:")
- print(f"\nsource {venv_dir}/bin/activate\n")
- exit(1)
+        print(f"\nPython virtual environmnet required to execute,\n")
+        print(f"Please run the wrapper script gpsposition instead.\n")
+        sys.exit(0)
 
 PORT = os.getenv("DigiHubGPSport")
 
+if PORT == "nogps":
+        print(f"\nNo GPS device is configured for DigiHub, please run editconfig if this is incorrect.\n")
+        sys.exit(0) 
+
 def main():
-    ser = serial.Serial(PORT, 9600, timeout=1)
+        ser = serial.Serial(PORT, 9600, timeout=1)
 
-    while True:
-        line = ser.readline().decode('ascii', errors='ignore').strip()
-        if not line:
-            continue
+        while True:
+                line = ser.readline().decode('ascii', errors='ignore').strip()
+                if not line:
+                        continue
 
-        msg = None
+                msg = None
 
-        if line.startswith("$GNRMC") or line.startswith("$GPRMC"):
-            try:
-                msg = pynmea2.parse(line)
-            except pynmea2.ParseError:
-                continue
-        else:
-            continue
+                if line.startswith("$GNRMC") or line.startswith("$GPRMC"):
+                        try:
+                                msg = pynmea2.parse(line)
+                        except pynmea2.ParseError:
+                                continue
+                else:
+                        continue
 
-        if msg.status != "A":
-            continue
+                if msg.status != "A":
+                        continue
 
-        lat = msg.latitude
-        lon = msg.longitude
+                lat = msg.latitude
+                lon = msg.longitude
 
-        print(f"{lat:.7f},{lon:.7f}")
-        break
+                print(f"{lat:.7f},{lon:.7f}")
+                break
 
 if __name__ == "__main__":
-    main()
+        main()

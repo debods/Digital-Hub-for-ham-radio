@@ -128,6 +128,7 @@ chmod +x "$ScriptPath"/* "$PythonPath"/*
  # Clean existing and backup .profile
  perl -i.dh -0777 -pe 's{\s+\z}{}m' "$HomePath"/.profile >/dev/null 2>&1
  printf '\n' >> "$HomePath"/.profile
+if [ "$gpsport" == "nodata" ]; theh gpsport="nogps"; fi
 for i in "# DigiHub Installation" "export DigiHub=$DigiHubHome" "export DigiHubPy=$PythonPath" "export DigiHubGPSport=$gpsport" "export DigiHubvenv=$venv_dir" "export DigiHubcall=$callsign" "export DigiHubaprs=$aprspass" "export DigiHubaxnode=$axnodepass" "export DigiHubLat=$lat" "export DigiHubLon=$lon" "export DigiHubgrid=$grid" "PATH=$ScriptPath:$PythonPath:\$PATH" "clear; sysinfo"; do
 if ! grep -qF "$i" "$HomePath"/.profile; then
  printf '\n%s' "$i" >> "$HomePath"/.profile
