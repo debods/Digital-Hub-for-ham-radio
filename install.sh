@@ -136,7 +136,10 @@ printf 'This is usually caused by a GPS device being attached and then removed, 
 printf '\nContinue with information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
 YnContinue
 
-# if no lat lon, allow manual entry
+# if non-us request information
+# already have callsign
+# need: lat lon (derive grid)
+# optional: class expiry licstat forename initial surname suffix street town state zip country
 
 # Generate aprspass and axnodepass
 aprspass=$(python3 "$InstallPath"/Files/pyscripts/aprspass.py "$callsign")
