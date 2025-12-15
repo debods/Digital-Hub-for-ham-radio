@@ -3,6 +3,7 @@
 #
 # gpsposition
 # python script wrapper for gpsposition.py
+# uses hamgrid.py to calculate grid
 #
 # Version 1.0a
 #
