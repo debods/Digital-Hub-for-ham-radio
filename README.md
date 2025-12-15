@@ -55,9 +55,9 @@ All software is open-source licensed and is freely available.
 
 Credits
 -------
-DigiPi    [https://digipi.org]
-Direwolf  [https://github.com/wb2osz/direwolf]
-hamdb     [https://hamdb.org]
+DigiPi    https://digipi.org
+Direwolf  https://github.com/wb2osz/direwolf
+hamdb     https://hamdb.org
 
 
 
