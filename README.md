@@ -6,16 +6,22 @@ DigiHub is not an application or environment, it is a curated collection of ham 
 It is designed to be an alternative to the popular DigiPi which is an excellent implementation (but has limitations) and, is a highly recommended option for those setting out on the digital ham path.
 
 DigiHub, builds on the DigiPi concept and is designed to be installed on an existing Debian system rather than being a complete Operating system image.
+
 The installation script has been built and tested on Debian trixie 64-bit meaning it can be installed on Raspberry Pi OS running on a Pi Zero 2W, 3, 4 or, 5.
 
 The primary design goal of DigiHub is flexibility and configurability:
 
-The configuration is editable.
+The configuration is editable, DigiHub:
+|:------------------------------------------------------------------------------------------------------|
 It validates (US) callsigns.
-It automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
-It automatically generates the correct APRS password.
-It automatically generates a random alphanumeric AX node password.
-It can be installed for an individual or club callsign.
+|:------------------------------------------------------------------------------------------------------|
+Automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
+|:------------------------------------------------------------------------------------------------------|
+Automatically generates the correct APRS password.
+|:------------------------------------------------------------------------------------------------------|
+Automatically generates a random alphanumeric AX node password.
+|:------------------------------------------------------------------------------------------------------|
+Can be installed for an individual or club callsign.
 
 Command Line Utilties
 ---------------------
