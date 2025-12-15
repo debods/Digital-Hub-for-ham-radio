@@ -8,6 +8,9 @@
 #
 # Steve de Bode - KQ4ZCI - December 2025
 #
+# Input:	callsign
+# Output: none - interactive
+#
 
 # Check Parameters
 if [ "$#" -ne "1" ]; then
