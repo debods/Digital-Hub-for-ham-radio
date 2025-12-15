@@ -10,8 +10,11 @@
 #
 # Steve de Bode - KQ4ZCI - December 2025
 #
+# Input:	callsign
+# Output: none - interactive
+#
 
-# Remeber changes in .profile might be needed in venv/bin/activate
+# Remember changes in .profile might be needed in venv/bin/activate
 
 DigiHubGPSport
 DigiHubcall
