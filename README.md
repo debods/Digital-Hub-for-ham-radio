@@ -39,25 +39,23 @@ These along with other useful tools are located in DigiHub/scripts (included in 
 All software is open-source licensed and is freely available.
 
 Credits:
-DigiPi    https://digipi.org
-Direwolf  https://github.com/wb2osz/direwolf
-hamdb     https://hamdb.org
+DigiPi    [https://digipi.org]
+Direwolf  [https://github.com/wb2osz/direwolf]
+hamdb     [https://hamdb.org]
 
-Installation instructions:
-
+Installation
+-------------
 Ensure the Operating System you are installing on has an active Internet connection, then issue the following commands:
 
-If necessary, as it may already be installed:
-
+If necessary, install git:
+'''bash
 sudo apt install git
-
-Clone the repository:
-
-git clone [<DigiHub repository>](https://github.com/debods/DigiHubHam.git)
+'''
 
 Change directory to the install folder, make the installer executable and run it:
 
 ```bash
+git clone [https://github.com/debods/DigiHubHam.git]
 cd DigiHubHam
 chmod +x install.sh
 ./install.sh <callsign>
