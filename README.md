@@ -26,7 +26,7 @@ GPS Devices
 -----------
 DigiHub will detect and use correctly installed and working GPS devices.
 
-A recommended GPS device is a Waveshare L76X Multi-GNSS HAT (avaialble [here.](https://www.waveshare.com/l76x-gps-hat.htm)), it works with any PC hardware via USB, and Raspberry Pi via the GPIO header.
+A recommended GPS device is a Waveshare L76X Multi-GNSS HAT (avaialble [here](https://www.waveshare.com/l76x-gps-hat.htm)), it works with any PC hardware via USB, and Raspberry Pi via the GPIO header.
 
 Users without a US callsign
 ---------------------------
