@@ -78,12 +78,12 @@ All software installed by DigiHub is open-source licensed and freely available.
 Credits                                                   
 -------
 
-| Source   | Link                                          | Purpose             |
-|:---------|:----------------------------------------------|:--------------------|
-| DigiPi   | https://digipi.org                            | Concept & content   |
-| Direwolf | https://github.com/wb2osz/direwolf            | Direwolf            |
-| hamdb    | https://hamdb.org                             | API Calls           |
-| scripts  | https://github.com/dslotter/ham_radio_scripts | FLDigi Installation |
+| Source    | Link                                          | Purpose             |
+|:----------|:----------------------------------------------|:--------------------|
+| hamdb.org | https://hamdb.org                             | API Calls           |
+| Direwolf  | https://github.com/wb2osz/direwolf            | Direwolf            |
+| scripts   | https://github.com/dslotter/ham_radio_scripts | FLDigi Installation |
+| DigiPi    | https://digipi.org                            | Concept & content   |
 
 
 
