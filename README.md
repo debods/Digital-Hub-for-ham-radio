@@ -4,7 +4,7 @@ Overview
 --------
 DigiHub is not an application or environment, it is a curated collection of ham radio utilities and applications geared toward Digital ham radio Operations.
 
-It is designed to be an alternative to the popular DigiPi which is an excellent implementation (but has limitations) and, is a highly recommended option for those setting out on the digital ham path.
+It is designed to be an alternative to the popular DigiPi which is an excellent implementation and, is a highly recommended option for those setting out on the digital ham path.
 
 DigiHub, builds on the DigiPi concept and is designed to be installed on an existing Debian system rather than being a complete Operating System image.
 
