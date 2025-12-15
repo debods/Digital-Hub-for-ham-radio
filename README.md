@@ -8,10 +8,17 @@ It is designed to be an alternative to the popular DigiPi which is an excellent 
 DigiHub, builds on the DigiPi concept and is designed to be installed on an existing Debian system rather than being a complete Operating system image.
 The installation script has been built and tested on Debian trixie 64-bit meaning it can be installed on Raspberry Pi OS running on a Pi Zero 2W, 3, 4 or, 5.
 
-The primary benefit of DigiHub is it's flexibily and configurability:
+The primary design goal of DigiHub is flexibility and configurability:
 
-It can be installed for an individual or club callsign
+The configuration is editable.
+It validates (US) callsigns.
+It automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
+It automatically generates the correct APRS password.
+It automatically generates a random alphanumeric AX node password.
+It can be installed for an individual or club callsign.
 
+Command Line Utilties
+---------------------
 A number of the methods used to install, run and maintain DigiHub are included as command line utilities:
 
 | Command     | Purpose                                                     | Written in  |
@@ -56,7 +63,7 @@ cd DigiHubHam
 chmod +x install.sh
 ./install.sh <callsign>
 ```
-All software is open-source licensed and is freely available.
+All software installed by DigiHub is open-source licensed and freely available.
 
 Credits
 -------
