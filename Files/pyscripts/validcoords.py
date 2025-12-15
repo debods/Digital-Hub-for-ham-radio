@@ -12,13 +12,10 @@ Input:	callsign
 Output: (APRS password)
 """
 
+import argparse
+import sys
+
 def validate(latitude, longitude):
-    if not isinstance(latitude, (int, float)):
-        raise ValueError("Latitude must be a number")
-
-    if not isinstance(longitude, (int, float)):
-        raise ValueError("Longitude must be a number")
-
     if latitude < -90.0 or latitude > 90.0:
         raise ValueError("Latitude must be between -90 and 90 degrees")
 
@@ -26,3 +23,24 @@ def validate(latitude, longitude):
         raise ValueError("Longitude must be between -180 and 180 degrees")
 
     return True
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Validate latitude and longitude"
+    )
+    parser.add_argument("latitude", type=float)
+    parser.add_argument("longitude", type=float)
+    args = parser.parse_args()
+
+    try:
+        validate(args.latitude, args.longitude)
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
