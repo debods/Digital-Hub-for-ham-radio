@@ -77,6 +77,7 @@ All software installed by DigiHub is open-source licensed and freely available.
 
 Credits
 -------
+|-----------------------------------------------------------|
 | DigiPi    | https://digipi.org                            |
 | Direwolf  | https://github.com/wb2osz/direwolf            |
 | hamdb     | https://hamdb.org                             |
