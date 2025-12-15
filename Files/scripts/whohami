@@ -1,17 +1,17 @@
 #!/bin/bash
 
-#
-# whohami
-# read and print curent user information from ~/.dhinfo
-# Linux users should get the play on words!
-#
-# Version 1.0a
-#
-# Steve de Bode - KQ4ZCI - December 2025
-#
-# Input:	none
-# Output: none - informational
-#
+: <<'END'
+whohami
+read and print curent user information from ~/.dhinfo
+Linux users should get the pun!
+
+Version 1.0a
+
+Steve de Bode - KQ4ZCI - December 2025
+
+Input:	none
+Output: none - informational
+END
 
 colb='\033[34m'; ncol='\e[0m'
 

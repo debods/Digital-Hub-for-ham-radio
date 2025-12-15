@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#
-# dwsetup
-# Direwolf installer and updater
-#
-# Version 1.0a
-#
-# Steve de Bode - KQ4ZCI - December 2025
-#
+: <<'END'
+dwsetup
+Direwolf installer and updater
+
+Version 1.0a
+
+Steve de Bode - KQ4ZCI - December 2025
+END
 
 cd $HomePath
 git clone https://www.github.com/wb2osz/direwolf

@@ -13,7 +13,7 @@ The installation script has been built and tested on Debian trixie 64-bit, which
 The primary design goal of DigiHub is flexibility and configurability:
 
 Digihub
-|:------------------------------------------------------------------------------------------------------|
+|:---------------------------------------------------------------------------------------------------|
 Validates (US) callsigns.
 Has an editable configuration
 Automatically calculates maidenhead grid square from Latitude and Longitude when using a GPS device.
@@ -36,7 +36,7 @@ editconfig    | Edit the DigHub installation (callsign, grid etc.)          | ba
 gpsposition   | Get current GPS position from GPS device                    | bash/python |
 hamgrid       | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 sysinfo       | System information                                          | bash        |
-unistall      | Remove DigiHub                                              |             |
+uninstall     | Remove DigiHub                                              | bash        |
 whohami       | Show user information held for current configuration        | bash        |
 
 These along with other valuable tools are located in DigiHub/scripts (included in the PATH after install).
@@ -57,7 +57,7 @@ Installation
 -------------
 Ensure the Operating System you are installing on has an active Internet connection and, if you intend to use a GPS, it is connected and working.
 
-Note: python3, git (to cover the instance of copying rather than downloading the repository), and curl will be installed as part of the process if not already available and will NOT be removed if DigiHub is removed.
+**Note:** *python3, wget and curl will be installed as part of the process if not already available and will NOT be removed if DigiHub is removed.*
 
 Issue the following commands:
 
@@ -75,11 +75,15 @@ chmod +x install.sh
 ```
 All software installed by DigiHub is open-source licensed and freely available.
 
-Credits
+Credits                                                   
 -------
-DigiPi    https://digipi.org
-Direwolf  https://github.com/wb2osz/direwolf
-hamdb     https://hamdb.org
+
+| Source    | Link                                          | Purpose             |
+|:----------|:----------------------------------------------|:--------------------|
+| hamdb.org | https://hamdb.org                             | API Calls           |
+| Direwolf  | https://github.com/wb2osz/direwolf            | Direwolf            |
+| scripts   | https://github.com/dslotter/ham_radio_scripts | FLdigi Installation |
+| DigiPi    | https://digipi.org                            | Concept & content   |
 
 
 
