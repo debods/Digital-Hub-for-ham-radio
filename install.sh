@@ -87,8 +87,8 @@ printf 'Updating Operating System ... '
 source "$ScriptPath"/update >/dev/null 2>&1
 printf 'Complete\n\n'
 
-# Check for Python3/git/curl - Install if not found
-for i in python3 git curl
+# Check for Python3/wget/curl - Install if not found
+for i in python3 wget curl
 do
  command -v "$i" >/dev/null 2>&1 || sudo apt -y install "$i" >/dev/null 2>&1 };
 done
