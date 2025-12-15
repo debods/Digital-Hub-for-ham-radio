@@ -3,7 +3,8 @@
 #
 # aprspass
 # python script wrapper for aprspass.py
-# uses vailidcall 
+# US Only - uses vailidcall.py
+#
 # Version 1.0a
 #
 # Steve de Bode - KQ4ZCI - December 2025
