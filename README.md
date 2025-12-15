@@ -47,8 +47,8 @@ DigiHub will detect and use correctly installed and working GPS devices.
 
 A recommended GPS device is a Waveshare L76X Multi-GNSS HAT (available [here](https://www.waveshare.com/l76x-gps-hat.htm)). It works with any PC hardware via USB and with Raspberry Pi via the GPIO header.
 
-Users without a US callsign
----------------------------
+Operators without a US callsign
+-------------------------------
 DigiHub leverages an API for callsign validation and user data, which is reliable in the US; unfortunately, outside the US, this is not the case.
 
 To enable ham operators outside the US to use DigiHub, entering non-us (or NON-US) as the callsign when installing DigiHub, e.g., ./install.sh NON-US, allows manual entry of the unvalidated callsign and other required information.
