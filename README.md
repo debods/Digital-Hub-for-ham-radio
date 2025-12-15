@@ -45,17 +45,18 @@ hamdb     [https://hamdb.org]
 
 Installation
 -------------
-Ensure the Operating System you are installing on has an active Internet connection, then issue the following commands:
+Ensure the Operating System you are installing on has an active Internet connection and, if you intend to use a GPS, it is connected and working.
+
+Issue the following commands:
 
 If necessary, install git:
-'''bash
+```bash
 sudo apt install git
-'''
-
+```
 Change directory to the install folder, make the installer executable and run it:
 
 ```bash
-git clone [https://github.com/debods/DigiHubHam.git]
+git clone https://github.com/debods/DigiHubHam.git
 cd DigiHubHam
 chmod +x install.sh
 ./install.sh <callsign>
