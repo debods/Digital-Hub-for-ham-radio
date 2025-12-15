@@ -1,17 +1,18 @@
 #!/bin/bash
 
-#
-# aprspass
-# python script wrapper for aprspass.py
-# US Only - uses vailidcall.py
-#
-# Version 1.0a
-#
-# Steve de Bode - KQ4ZCI - December 2025
-#
-# Input:	callsign
-# Output: APRS password
-#
+: <<'END'
+aprspass
+python script wrapper for aprspass.py
+US Only - uses vailidcall.py
+
+Version 1.0a
+
+Steve de Bode - KQ4ZCI - December 2025
+
+Input:	callsign
+Output: APRS password
+
+END
 
 # Variables
 colr='\e[31m'; ncol='\e[0m'
