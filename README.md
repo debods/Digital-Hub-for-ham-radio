@@ -33,7 +33,7 @@ aprspass      | Generate an APRS password                                   | ba
 checkcall     | Check a US callsign using the hamdb API                     | bash        |
 dwsetup       | Install, or update an existing installation of Direwolf     | bash        |
 editconfig    | Edit the DigHub installation (callsign, grid etc.)          |             |
-gpsposition   |                                                             |             | 
+gpsposition   | Get current GPS position from GPS device                    |             | 
 hamgrid       | Calculate a Maidenhead ham grid from latitude and longitude | bash/python |
 sysinfo       | System information                                          | bash        |
 unistall      | Remove DigiHub                                              |             |
