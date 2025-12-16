@@ -150,11 +150,9 @@ case "$gpscode" in
   hamgrid=$(python3 "$InstallPath"/Files/pyscripts/hamgrid.py "$gpslat" "$gpslon")
   printf 'found on port %s and ready.\nCurrent coordinates\tLatitude: %s Longitude: %s Grid: %s\nFCC coordinates:\tLatitude: %s Longitude: %s Grid: %s\n' "$gpsport" "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
   while true; do
-   printf '\nWould you like to use your current location or home QTH from the FCC for the installation (C/f)? '; read -n1 -r response
-   case $response in
-    C|c) printf '\n'; lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;; F|f) break ;; *) printf '\nInvalid response, please select c (or C) for Current location or f (or F) for FCC location' ;; esac
-   done
-  ;;
+   printf '\nWould you like to use your current location or home QTH from the FCC for the installation (C/f)? '; read -n 1 -r response
+   case $response in C|c) printf '\n'; lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;; F|f) break ;; *) printf '\nInvalid response, please select c (or C) for Current location or f (or F) for FCC location' ;; esac
+  done ;;
  1) printf 'found on port %s no satellite fix.\n' "$gpsport" ;;
  2) printf 'found on port %s no data is being received.\n' "$gpsport" ;;
  3) printf 'not found!\n' ;;
