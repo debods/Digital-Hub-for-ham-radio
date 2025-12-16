@@ -165,7 +165,7 @@ case "$gpscode" in
  1|2)
   printf '\nPlease note: If the port is reported as nodata, there may be artefacts causing inconssitent results.\n'
   printf 'This is usually caused by a GPS device being attached and then removed, no GPS appears to be connected.\n'
-  printf '\nThe raw report from your GPS is Port: %s Status: %s\n"  "$gpsport" "$gpsstatus"
+  printf '\nThe raw report from your GPS is Port: %s Status: %s\n'  "$gpsport" "$gpsstatus"
   printf '\nContinue with information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
   YnContinue
  *) printf 'scripting error - exiting\n'; exit 1 ;;
