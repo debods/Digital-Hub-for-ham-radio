@@ -12,6 +12,9 @@ Input:	callsign
 Output: (APRS password)
 """
 
+import re
+import sys
+
 PORTABLE_RE = re.compile(r"/(P|M|MM)$", re.IGNORECASE)
 
 def normalize_callsign(callsign: str) -> str:
