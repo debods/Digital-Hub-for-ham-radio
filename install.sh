@@ -141,6 +141,12 @@ printf 'Checking for GPS device ... '
 gps=$(python3 "$InstallPath"/Files/pyscripts/gpstest.py)
 gpscode=$?; IFS=',' read -r gpsport gpsstatus <<< "$gps"
 
+# Catch an error from gpstest.py even though gpscode can only ever be 0, 1, 2 or 3
+case "$gpscode" in
+ 0|1|2|3) : ;;
+ *) printf 'FATAL: gpscode invariant violated (value=%q)\n' "$gpscode"; exit 1 ;;
+esac
+
 case "$gpscode" in
  # Option to use current location from GPS (available in editconfig script)
  0) 
