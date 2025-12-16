@@ -176,8 +176,6 @@ esac
 aprspass=$(python3 "$InstallPath"/Files/pyscripts/aprspass.py "$callsign")
 axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)
 
-# Nothing is written to disk or files prior to this point
-
 # Copy files/directories into place & set permissions
 cp -R "$InstallPath"/Files/* "$DigiHubHome"
 # html files
