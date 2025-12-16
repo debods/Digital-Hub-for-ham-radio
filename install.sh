@@ -153,9 +153,8 @@ case "$gpscode" in
   while true; do
    printf '\nWould you like to use your current location or home QTH from the FCC for the installation (C/f)? '; read -n1 -r response
    case $response in
-    C|c) printf '\n'; lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;; F|f) ;; *) printf '\nInvalid response, please select c (or C) for Current location or f (or F) for FCC location' ;; esac
+    C|c) printf '\n'; lat=$gpslat; lon=$gpslon; grid=$hamgrid; break ;; F|f) break ;; *) printf '\nInvalid response, please select c (or C) for Current location or f (or F) for FCC location' ;; esac
    done
-  break ;;
  1) printf 'found on port %s no satellite fix.\n' "$gpsport" ;;
  2) printf 'found on port %s no data is being received.\n' "$gpsport" ;;
  3) printf 'not found!\n' ;;
