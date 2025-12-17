@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 : <<'END'
 install.sh
@@ -24,20 +24,71 @@ venv_dir="$DigiHubHome/.digihub-venv"
 PythonPath="$DigiHubHome/pyscripts"
 InstallPath=$(pwd)
 
-# Functions
-function YnContinue {
- while true; do
-  printf '\nContinue (Y/n)? '; read -n1 -r response
-  case $response in 
-  Y|y) printf '\n\n'; break ;;
-  N|n) 
-   printf '\nInstallation aborted.\n'
-   deactivate >/dev/null 2>&1
-   if [ -d "DigiHubHome" ]; then rm -Rf $DigiHubHome; fi
-   exit 0 ;;
-  *) printf '\nInvalid response, please select y (or Y) for yes or n (or N)) for no\n' ;; esac
+### FUNCTIONS ###
+
+# Required values
+PromptReq() {
+ local var_name=$1 prompt=$2 value
+ while [[ -z $value ]]; do
+  read -rp "$prompt" value
+ done
+ printf -v "$var_name" '%s' "$value"
+}
+
+# Optional values
+PromptOpt() {
+ local var_name=$1 prompt=$2 value
+ read -rp "$prompt" value
+ printf -v "$var_name" '%s' "$value"
+}
+
+# y/n; return 0 for yes.
+YnCont() {
+ local prompt=${1:-"Continue (y/N)? "} reply
+ while :; do
+  read -n1 -rp "$prompt" reply
+  printf '\n'
+  case $reply in
+   [Yy]) return 0 ;;
+   [Nn]) return 1 ;;
+   *) printf '%s\n' 'Please select (y/N): ' ;;
+  esac
  done
 }
+
+# Purge DigiHub if installation aborted
+function CleanUp() {
+ printf '\nInstallation aborted.\n'
+ deactivate >/dev/null 2>&1 || true
+ sudo rm -rf -- "$DigiHubHome"
+ exit 0
+}
+
+_on_exit() {
+  rc=$?
+  # Only clean up on abnormal exit (non-zero)
+  if [[ $rc -ne 0 ]]; then
+    CleanUp
+  fi
+  return $rc
+}
+
+_on_signal() {
+  sig="$1"
+  CleanUp
+  # Conventional exit codes for signals: 128 + signal number
+  case "$sig" in
+    INT)  exit 130 ;;
+    TERM) exit 143 ;;
+    *)    exit 1   ;;
+  esac
+}
+
+trap _on_exit EXIT
+trap '_on_signal INT' INT
+trap '_on_signal TERM' TERM
+
+### Script ####
 
 # Check Parameters
 if [ "$#" -ne "1" ]; then
@@ -65,57 +116,83 @@ fi
 # non-US information entry
 if [ "${1^^}" == "NON-US" ]; then
   
-  # Required callsign, lat, lon
-  while [ -z "${callsign:-}" ]; do printf 'Enter callsign (required): '; read -r callsign; done
-   if [ -z "${lat:-}" ] || [ -z "${lon:-}" ]; then lat=''; lon=''
-    while [ -z "${lat:-}" ]; do printf 'Enter latitude (required): '; read -r lat; done
-    while [ -z "${lon:-}" ]; do printf 'Enter longitude (required): '; read -r lon; done
-   fi
+ # Required callsign, lat, lon
+ printf '\nPlease enter the requested information. Note that some fields are required unless stated otherwise.\n\n'
+ PromptReq callsign " callsign: "; PromptReq lat " latitude: "; PromptReq lon " longitude: "
+
+ # Validate lat lon and generate grid
+ max_tries=5
+ tries=0
+
+ while true; do
+  python3 "$InstallPath"/Files/pyscripts/validcoords.py "$lat" "$lon"
+  rc=$?
+
+  case "$rc" in 0) break ;;
+   1)
+    ((tries++))
+    if (( tries >= max_tries )); then
+     printf '\nToo many invalid attempts, aborting installation.\n'
+     exit 1
+    fi
+    printf '\n Invalid latitude/longitude. Please try again:\n'
+    read -r -p " Enter latitude  (-90..90): " lat
+    read -r -p " Enter longitude (-180..180): " lon ;;
+   2) printf 'Error: validcoords.py usage or internal error.\n'; exit 2 ;;
+   *) printf 'Error: validcoords.py returned unexpected exit code $rc.\n'; exit 3 ;;
+  esac
+ done
+
+ grid="$(python3 $InstallPath/Files/pyscripts/hamgrid.py "$lat" "$lon")"
+ if [[ -z "$grid" ]]; then echo "Error: hamgrid.py produced no output."; exit 4; fi
 
  # Optional forename, initial, surname, suffix
- if [ -z "${forename:-}" ] && [ -z "${surname:-}" ]; then
-  printf 'Enter name details? (y/N): '; read -r ans
-  if [ "$ans" = "y" ] || [ "$ans" = "Y" ]; then
-   while [ -z "${forename:-}" ]; do printf 'Forename (required): '; read -r forename; done
-   printf 'Initial (optional): '; read -r initial
-   while [ -z "${surname:-}" ]; do printf 'Surname (required): '; read -r surname; done
-   printf 'Suffix (optional): '; read -r suffix
-  fi
+ printf '\n'
+ if YnCont "Enter name details (All fields are Optional) - (y/N)? "; then
+  printf '\n'
+  PromptOpt forename " Forename: "; PromptOpt initial " Initial: "; PromptOpt surname " Surname: "; PromptOpt suffix " Suffix: "
  fi
 
  # Optional class, expiry, licstat
- if [ -z "${class:-}" ] && [ -z "${expiry:-}" ] && [ -z "${licstat:-}" ]; then
-  printf 'Enter license details? (y/N): '; read -r ans
-  if [ "$ans" = "y" ] || [ "$ans" = "Y" ]; then
-   printf 'License class: '; read -r class
-   printf 'Expiry date: '; read -r expiry
-   printf 'License status: '; read -r licstat
-  fi
+ printf '\n'
+ if YnCont "Enter license details? (All fields are Optional) - (y/N)? "; then
+  printf '\n'
+  PromptOpt class " License class: ";  PromptOpt expiry " Expiry date: "; PromptOpt licstat " License status: "
  fi
 
  # Optional street, town, state, zip, country
- if [ -z "${street:-}" ] && [ -z "${town:-}" ] && [ -z "${state:-}" ] && [ -z "${zip:-}" ] && [ -z "${country:-}" ]; then
-  printf 'Enter address details? (y/N): '; read -r ans
-  if [ "$ans" = "y" ] || [ "$ans" = "Y" ]; then
-   printf 'Street: '; read -r street
-   printf 'Town/City: '; read -r town
-   printf 'State/Province/County: '; read -r state
-   printf 'ZIP/Postal Code: '; read -r zip
-   printf 'Country: '; read -r country
-  fi
+ printf '\n'
+ if YnCont "Enter address details (All fields are Optional) - (y/N)? "; then
+  printf '\n'
+  PromptOpt street  " Street: "; PromptOpt town " Town/City: "; PromptOpt state " State/Province/County: "; PromptOpt zip " ZIP/Postal Code: "; PromptOpt country " Country: "
  fi
+ printf '\n'
 
-fi
+ # Check for correct Callsign
+ printf '%b' '\nDigiHub will be installed for callsign "' "$colb" "${callsign^^}" "$ncol" '"\nUsing the following details:\n' 
+ # String coantication and cleanup
+ fullname="$forename $initial $surname $suffix"; fullname=$(echo "$fullname" | xargs)
+ address="$street, $town, $state $zip $country"; address="${address##[ ,]*}"
 
-# Check for correct Callsign
-printf '%b' '\nDigiHub will be installed for callsign "' "$colb" "${1^^}" "$ncol" '"\nIf this is incorrect select n (or N) and re-run the installer with the correct callsign.\n'
-YnContinue
+ # Convert Empty Fields to Unknown
+ for var in class expiry licstat fullname address; do
+  [[ -z ${!var//[[:space:]]/} ]] && printf -v "$var" '%s' "Unknown"
+ done
 
+ # Convert License Class
+ case "$class" in "T") class="Technician" ;; "G") class="General" ;; "E") class="Extra" ;; "N") class="Novice" ;; "A") class="Advanced" ;; esac
+ # Convert License Status
+ case "$licstat" in "A") licstat="Active" ;; "E") licstat="Expired" ;; "P") licstat="Pending" ;; esac
+ printf 'License:\t%s - Expiry %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n\n' "$class" "$expiry" "$licstat" "$fullname" "$address" "$grid" "$lat" "$lon"
+
+ printf '\nIf this is incorrect, select n (or N) and re-run the installer with the correct callsign. '
+ YnCont || exit 1
+fi 
+ 
 # Check for exising installation and warn
 if grep -qF "DigiHub" "$HomePath/.profile"; then
  printf '%b' "${colr}" 'Warning! ' "${ncol}" 'There appears to be an existing installation of DigiHub for ' "${colr}" "$DigiHubcall" "${ncol}" ' which will be replaced if you continue.\n'
- YnContinue
- "$ScriptPath"/uninstall "ni" >/dev/null 2>&1
+ YnCont &&  "$ScriptPath"/uninstall "ni" >/dev/null 2>&1
 fi
 
 printf 'This may take some time ...\n\n' 
@@ -176,7 +253,7 @@ case "$gpscode" in
   printf 'This is usually caused by a GPS device being attached and then removed, no GPS appears to be connected.\n'
   printf '\nThe raw report from your GPS is Port: %s Status: %s\n'  "$gpsport" "$gpsstatus"
   printf '\nContinue with information from your home QTH - Latitude: %s Longitude: %s Grid: %s\n' "$lat" "$lon" "$grid"
-  YnContinue ;;
+  YnCont ;;
 esac
 
 # Generate aprspass and axnodepass

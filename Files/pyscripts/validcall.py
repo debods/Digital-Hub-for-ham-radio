@@ -19,29 +19,29 @@ import re
 import sys
 
 def is_valid_us_callsign(callsign: str) -> bool:
-    callsign = callsign.strip().upper()
+ callsign = callsign.strip().upper()
 
-    # Remove optional portable suffixes
-    callsign = re.sub(r"/(P|M|MM|AM)$", "", callsign)
+ # Remove optional portable suffixes
+ callsign = re.sub(r"/(P|M|MM|AM)$", "", callsign)
 
-    pattern = re.compile(
-        r"^(?:"
-        r"[KNW][A-Z]?|"    # K/N/W or KA–KZ, NA–NZ, WA–WZ
-        r"A[A-L]"          # AA–AL
-        r")"
-        r"[0-9]"           # single digit
-        r"[A-Z]{1,3}$"     # 1–3 letter suffix
-    )
+ pattern = re.compile(
+  r"^(?:"
+  r"[KNW][A-Z]?|"    # K/N/W or KA–KZ, NA–NZ, WA–WZ
+  r"A[A-L]"          # AA–AL
+  r")"
+  r"[0-9]"           # single digit
+  r"[A-Z]{1,3}$"     # 1–3 letter suffix
+ )
 
-    return bool(pattern.match(callsign))
+ return bool(pattern.match(callsign))
 
 
 def main():
-    if len(sys.argv) != 2:
-        sys.exit(2)
+ if len(sys.argv) != 2:
+  sys.exit(2)
 
-    sys.exit(0 if is_valid_us_callsign(sys.argv[1]) else 1)
+ sys.exit(0 if is_valid_us_callsign(sys.argv[1]) else 1)
 
 
 if __name__ == "__main__":
-    main()
+ main()

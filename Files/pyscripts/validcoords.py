@@ -8,39 +8,39 @@ Version 1.0a
 
 Steve de Bode - KQ4ZCI - December 2025
 
-Input:	Latitude Longitude
-Output: validation
+Input:		Latitude Longitude
+Exit codes: 0 = valid
+			1 = invalid coordinates
+			2 = invalid arguments
 """
 
 import argparse
 import sys
 
+class SilentArgumentParser(argparse.ArgumentParser):
+ def error(self, message):
+  sys.exit(2)   # argparse-style error, but silent
+
 def validate(latitude, longitude):
-    if latitude < -90.0 or latitude > 90.0:
-        raise ValueError("Latitude must be between -90 and 90 degrees")
+ if not (-90.0 <= latitude <= 90.0):
+  return False
 
-    if longitude < -180.0 or longitude > 180.0:
-        raise ValueError("Longitude must be between -180 and 180 degrees")
+ if not (-180.0 <= longitude <= 180.0):
+  return False
 
-    return True
-
+ return True
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Validate latitude and longitude"
-    )
-    parser.add_argument("latitude", type=float)
-    parser.add_argument("longitude", type=float)
-    args = parser.parse_args()
+ parser = SilentArgumentParser(add_help=False)
+ parser.add_argument("latitude", type=float)
+ parser.add_argument("longitude", type=float)
 
-    try:
-        validate(args.latitude, args.longitude)
-    except ValueError as e:
-        print(f"ERROR: {e}", file=sys.stderr)
-        sys.exit(1)
+ args = parser.parse_args()
 
-    sys.exit(0)
+ if not validate(args.latitude, args.longitude):
+  sys.exit(1)
 
+ sys.exit(0)
 
 if __name__ == "__main__":
-    main()
+ main()

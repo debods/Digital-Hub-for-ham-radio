@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 : <<'END'
 whohami
@@ -30,4 +30,4 @@ case "$class" in "T") class="Technician" ;; "G") class="General" ;; "E") class="
 case "$licstat" in "A") licstat="Active" ;; "E") licstat="Expired" ;; "P") licstat="Pending" ;; "U") licstat="?" ;; *) licstat="Unknown" ;; esac
 
 printf '%b' '\nThe details for this installation of DigiHub for callsign ' "$colb" "$callsign" "$ncol" ' are:\n\n'
-printf 'License:\t%s - Expiry %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude %s\n\n' "$class" "$expiry" "$licstat" "$fullname" "$address" "$grid" "$lat" "$lon"
+printf 'License:\t%s - Expiry %s (%s)\nName:\t\t%s\nAddress:\t%s\nCoordinates:\tGrid: %s Latitude: %s Longitude: %s\n\n' "$class" "$expiry" "$licstat" "$fullname" "$address" "$grid" "$lat" "$lon"
