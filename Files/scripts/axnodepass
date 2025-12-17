@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+: <<'END'
+axnodepass
+Genreat Random alphanumeric AX Node Password
+
+Version 1.0a
+
+Steve de Bode - KQ4ZCI - December 2025
+
+Input:	none
+Output: Random AX node password
+END
+
+axnodepass=$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)
+
+printf  '\nRandom alphanumeric AX Node Password: %s\n\n' "${1^^}" "$axnodepass"
