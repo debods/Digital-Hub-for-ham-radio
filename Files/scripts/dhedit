@@ -14,8 +14,6 @@ END
 
 set -euo pipefail
 
-colr='\e[31m'; colb='\033[34m'; ncol='\e[0m'
-
 HomePath="${HOME}"
 PROFILE_FILE="${HomePath}/.profile"
 DHINFO_FILE="${HomePath}/.dhinfo"
@@ -48,6 +46,7 @@ YnCont() {
 }
 
 PromptEdit() {
+  # PromptEdit VAR 'Label' REQUIRED(0|1)
   local __var="$1"
   local label="$2"
   local required="${3:-0}"
@@ -55,6 +54,7 @@ PromptEdit() {
   while true; do
     local cur="${!__var-}"
     local reply
+
     if [[ -n "$(trim "${cur}")" ]]; then
       read -r -p "${label} [${cur}]: " reply
     else
@@ -80,6 +80,7 @@ PromptEdit() {
 }
 
 SetUnknownIfEmpty() {
+  # SetUnknownIfEmpty var1 var2 ...
   for var in "$@"; do
     local v="${!var-}"
     v="$(trim "${v}")"
@@ -137,6 +138,7 @@ require_profile() {
 }
 
 profile_get_export() {
+  # profile_get_export NAME -> prints last export value or empty
   local name="$1"
   local line
   line="$(grep -E "^[[:space:]]*export[[:space:]]+${name}=" "$PROFILE_FILE" 2>/dev/null | tail -n1 || true)"
@@ -148,14 +150,17 @@ profile_get_export() {
 }
 
 profile_set_export() {
+  # profile_set_export NAME VALUE
   local name="$1"
   local value="$2"
   local tmp
   tmp="$(mktemp)"
 
   if grep -qE "^[[:space:]]*export[[:space:]]+${name}=" "$PROFILE_FILE" 2>/dev/null; then
+    # Replace all occurrences to avoid duplicates
     perl -pe "s/^[[:space:]]*export[[:space:]]+${name}=.*$/export ${name}=${value}/m" "$PROFILE_FILE" > "$tmp"
   else
+    # Insert after marker if present, else append
     if grep -qF '# DigiHub Installation' "$PROFILE_FILE" 2>/dev/null; then
       awk -v ins="export ${name}=${value}" '
         { print }
@@ -171,6 +176,7 @@ profile_set_export() {
 }
 
 profile_set_path_line() {
+  # Ensure installer PATH line exists (do not remove other PATH edits)
   local desired="$1"
   if ! grep -qF "$desired" "$PROFILE_FILE" 2>/dev/null; then
     if grep -qF '# DigiHub Installation' "$PROFILE_FILE" 2>/dev/null; then
@@ -187,6 +193,8 @@ profile_set_path_line() {
 
 load_from_dhinfo() {
   [[ -f "$DHINFO_FILE" ]] || return 0
+  # Installer order (16):
+  # callsign class expiry grid lat lon licstat forename initial surname suffix street town state zip country
   IFS=',' read -r \
     callsign class expiry grid lat lon licstat \
     forename initial surname suffix \
@@ -196,6 +204,8 @@ load_from_dhinfo() {
     printf -v "$v" '%s' "$(trim "${!v-}")"
   done
 }
+
+# --------------- Paths from profile ---------------
 
 load_digihub_paths() {
   DigiHubHome="$(profile_get_export 'DigiHub')"
@@ -207,6 +217,7 @@ load_digihub_paths() {
     exit 1
   fi
 
+  # Capture installer PATH line if present; else use canonical
   local pline
   pline="$(grep -F 'PATH=' "$PROFILE_FILE" | grep -F "$PythonPath" | tail -n1 || true)"
   if [[ -n "$pline" ]]; then
@@ -216,84 +227,9 @@ load_digihub_paths() {
   fi
 }
 
-ValidateCoords() {
-  if [[ -x "$(command -v python3)" && -f "${PythonPath}/validcoords.py" ]]; then
-    python3 "${PythonPath}/validcoords.py" "$lat" "$lon" >/dev/null
-  else
-    return 0
-  fi
-}
-
-DeriveGrid() {
-  if [[ -x "$(command -v python3)" && -f "${PythonPath}/hamgrid.py" ]]; then
-    grid="$(python3 "${PythonPath}/hamgrid.py" "$lat" "$lon")"
-  else
-    grid="${grid:-Unknown}"
-  fi
-}
-
-GetGPSLatLon() {
-  # gpsposition.py output: Latitude,Longitude
-  if [[ ! -x "$(command -v python3)" || ! -f "${PythonPath}/gpsposition.py" ]]; then
-    return 1
-  fi
-
-  local out
-  out="$(python3 "${PythonPath}/gpsposition.py" 2>/dev/null || true)"
-  out="$(trim "${out}")"
-
-  # Use first line only
-  out="$(printf '%s' "$out" | head -n1)"
-
-  local a b
-  a="$(printf '%s' "$out" | awk -F',' '{print $1}' | sed -e 's/^[[:space:]]\+//' -e 's/[[:space:]]\+$//')"
-  b="$(printf '%s' "$out" | awk -F',' '{print $2}' | sed -e 's/^[[:space:]]\+//' -e 's/[[:space:]]\+$//')"
-
-  # Basic sanity: both must look like numbers
-  if printf '%s' "$a" | grep -Eq '^-?[0-9]+(\.[0-9]+)?$' && printf '%s' "$b" | grep -Eq '^-?[0-9]+(\.[0-9]+)?$'; then
-    lat="$a"
-    lon="$b"
-    return 0
-  fi
-
-  return 1
-}
-
-UpdateCoordsAndGrid() {
-  local tries=0
-  local max_tries=5
-  while true; do
-    if ValidateCoords; then
-      DeriveGrid
-      return 0
-    fi
-    ((tries++))
-    printf '%s\n' 'Invalid latitude/longitude. Please correct them.' >&2
-    PromptEdit lat 'Latitude' 1
-    PromptEdit lon 'Longitude' 1
-    (( tries >= max_tries )) && { printf '%s\n' 'Too many invalid attempts.' >&2; exit 1; }
-  done
-}
-
-RecalcAPRS() {
-  if [[ -x "$(command -v python3)" && -f "${PythonPath}/aprspass.py" ]]; then
-    local out
-    out="$(python3 "${PythonPath}/aprspass.py" "$callsign" 2>/dev/null || true)"
-    aprspass="$(printf '%s' "$out" | awk '{print $NF}' | tail -n1)"
-    aprspass="$(trim "${aprspass}")"
-    if [[ -z "$aprspass" ]]; then
-      aprspass='Unknown'
-      return 1
-    fi
-    return 0
-  fi
-  aprspass='Unknown'
-  return 1
-}
-
+# --------------- HTTP + Callsign + HamDB ---------------
 
 http_get() {
-  # http_get URL  -> prints body to stdout, returns 0 on success
   local url="$1"
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL "$url"
@@ -307,7 +243,6 @@ http_get() {
 }
 
 is_non_us_callsign() {
-  # returns 0 if callsign is "non-us" (any case, with surrounding spaces ignored)
   local c
   c="$(trim "${callsign}")"
   c="$(printf '%s' "$c" | tr '[:upper:]' '[:lower:]')"
@@ -315,17 +250,15 @@ is_non_us_callsign() {
 }
 
 ValidateUSCallsign() {
-  # Uses validcall.py exit codes:
-  #   0 valid, 1 invalid, 2 usage error
+  # validcall.py exit codes: 0 valid, 1 invalid, 2 usage error
   if [[ ! -x "$(command -v python3)" || ! -f "${PythonPath}/validcall.py" ]]; then
-    # If missing, do not block editing; treat as not-validated.
     return 2
   fi
   python3 "${PythonPath}/validcall.py" "${callsign}"
 }
 
 HamDBLookup() {
-  # Uses HamDB CSV output
+  # Uses HamDB CSV output:
   # callsign,class,expires,status,fname,mi,name,suffix,addr1,addr2,state,zip,country
   local url line
   url="https://hamdb.org/${callsign}/csv/dhedit"
@@ -335,7 +268,6 @@ HamDBLookup() {
   [[ -z "$line" ]] && return 2
 
   local hb_callsign hb_class hb_expiry hb_status hb_fname hb_mi hb_name hb_suffix hb_addr1 hb_addr2 hb_state hb_zip hb_country
-
   IFS=',' read -r \
     hb_callsign hb_class hb_expiry hb_status \
     hb_fname hb_mi hb_name hb_suffix \
@@ -370,7 +302,7 @@ HamDBLookup() {
   [[ -n "$hb_zip"     ]] && zip="$hb_zip"
   [[ -n "$hb_country" ]] && country="$hb_country"
 
-  # Normalize optionals (NOT initial/suffix)
+  # Normalize (NOT initial/suffix)
   SetUnknownIfEmpty class expiry licstat forename surname street town state zip country
   BuildFullName
   BuildAddress
@@ -378,10 +310,8 @@ HamDBLookup() {
 }
 
 HandleCallsignChange() {
-  # Behavior:
-  # - If callsign is "non-us" (any case): skip validation + HamDB
-  # - If US callsign validates: query HamDB and apply any data found
-  # - If invalid: do nothing (user can still proceed, but won't auto-fill)
+  # - non-us: no validation, no HamDB
+  # - valid US callsign: HamDB lookup
   if is_non_us_callsign; then
     return 0
   fi
@@ -391,89 +321,225 @@ HandleCallsignChange() {
   rc=$?
 
   case "$rc" in
-    0)
-      HamDBLookup || true
-      ;;
-    1)
-      # Invalid callsign format; don't query HamDB
-      ;;
-    2)
-      # Validator missing or usage error; skip HamDB
-      ;;
-    *)
-      ;;
+    0) HamDBLookup || true ;;
+    1) ;;
+    2) ;;
+    *) ;;
   esac
+
+  return 0
 }
+
+# --------------- APRS ---------------
+
+RecalcAPRS() {
+  if [[ -x "$(command -v python3)" && -f "${PythonPath}/aprspass.py" ]]; then
+    local out
+    out="$(python3 "${PythonPath}/aprspass.py" "$callsign" 2>/dev/null || true)"
+    aprspass="$(printf '%s' "$out" | awk '{print $NF}' | tail -n1)"
+    aprspass="$(trim "${aprspass}")"
+    if [[ -z "$aprspass" ]]; then
+      aprspass='Unknown'
+      return 1
+    fi
+    return 0
+  fi
+  aprspass='Unknown'
+  return 1
+}
+
+# --------------- Coordinates / Grid ---------------
+
+ValidateCoords() {
+  if [[ -x "$(command -v python3)" && -f "${PythonPath}/validcoords.py" ]]; then
+    python3 "${PythonPath}/validcoords.py" "$lat" "$lon" >/dev/null
+  else
+    return 0
+  fi
+}
+
+DeriveGrid() {
+  if [[ -x "$(command -v python3)" && -f "${PythonPath}/hamgrid.py" ]]; then
+    grid="$(python3 "${PythonPath}/hamgrid.py" "$lat" "$lon")"
+  else
+    grid="${grid:-Unknown}"
+  fi
+}
+
+GetGPSLatLon() {
+  # gpsposition.py output: Latitude,Longitude
+  if [[ ! -x "$(command -v python3)" || ! -f "${PythonPath}/gpsposition.py" ]]; then
+    return 1
+  fi
+
+  local out
+  out="$(python3 "${PythonPath}/gpsposition.py" 2>/dev/null || true)"
+  out="$(trim "${out}")"
+  out="$(printf '%s' "$out" | head -n1)"
+
+  local a b
+  a="$(printf '%s' "$out" | awk -F',' '{print $1}' | sed -e 's/^[[:space:]]\+//' -e 's/[[:space:]]\+$//')"
+  b="$(printf '%s' "$out" | awk -F',' '{print $2}' | sed -e 's/^[[:space:]]\+//' -e 's/[[:space:]]\+$//')"
+
+  if printf '%s' "$a" | grep -Eq '^-?[0-9]+(\.[0-9]+)?$' && printf '%s' "$b" | grep -Eq '^-?[0-9]+(\.[0-9]+)?$'; then
+    lat="$a"
+    lon="$b"
+    return 0
+  fi
+
+  return 1
+}
+
+UpdateCoordsAndGrid() {
+  local tries=0
+  local max_tries=5
+  while true; do
+    if ValidateCoords; then
+      DeriveGrid
+      return 0
+    fi
+    ((tries++))
+    printf '%s\n' 'Invalid latitude/longitude. Please correct them.' >&2
+    PromptEdit lat 'Latitude' 1
+    PromptEdit lon 'Longitude' 1
+    (( tries >= max_tries )) && { printf '%s\n' 'Too many invalid attempts.' >&2; return 1; }
+  done
+}
+
+# --------------- Review/Edit (single UI) ---------------
 
 ReviewAndEdit() {
   while true; do
-    printf '\n================ REVIEW =================\n'
-    printf ' 1) Callsign:   %s\n' "${callsign:-}"
-    printf ' 2) GPS Port:   %s\n' "${gpsport:-}"
-    printf ' 3) Latitude:   %s\n' "${lat:-}"
-    printf ' 4) Longitude:  %s\n' "${lon:-}"
-    printf ' 5) Grid:       %s\n' "${grid:-}"
-    printf ' 6) APRS Pass:  %s\n' "${aprspass:-}"
-    printf ' 7) AX25 Pass:  %s\n' "${axnodepass:-}"
-    printf ' 8) Class:      %s\n' "${class:-}"
-    printf ' 9) Expiry:     %s\n' "${expiry:-}"
-    printf '10) Lic Status: %s\n' "${licstat:-}"
-    printf '11) Forename:   %s\n' "${forename:-}"
-    printf '12) Initial:    %s\n' "${initial:-}"
-    printf '13) Surname:    %s\n' "${surname:-}"
-    printf '14) Suffix:     %s\n' "${suffix:-}"
-    printf '15) Street:     %s\n' "${street:-}"
-    printf '16) Town/City:  %s\n' "${town:-}"
-    printf '17) State:      %s\n' "${state:-}"
-    printf '18) ZIP/Postal: %s\n' "${zip:-}"
-    printf '19) Country:    %s\n' "${country:-}"
-    printf '----------------------------------------\n'
-    printf ' Full Name:     %s\n' "${fullname:-}"
-    printf ' Address:       %s\n' "${address:-}"
-    printf '========================================\n'
+    printf '
+================ REVIEW =================
+'
+    printf '%s
+' '(.dhinfo fields - installer order)'
+    printf ' 1) Callsign:         %s
+' "${callsign:-}"
+    printf ' 2) Class:            %s
+' "${class:-}"
+    printf ' 3) Expiry:           %s
+' "${expiry:-}"
+    printf ' 4) Grid:             %s
+' "${grid:-}"
+    printf ' 5) Latitude:         %s
+' "${lat:-}"
+    printf ' 6) Longitude:        %s
+' "${lon:-}"
+    printf ' 7) Lic Status:       %s
+' "${licstat:-}"
+    printf ' 8) Forename:         %s
+' "${forename:-}"
+    printf ' 9) Initial:          %s
+' "${initial:-}"
+    printf '10) Surname:          %s
+' "${surname:-}"
+    printf '11) Suffix:           %s
+' "${suffix:-}"
+    printf '12) Street:           %s
+' "${street:-}"
+    printf '13) Town/City:        %s
+' "${town:-}"
+    printf '14) State:            %s
+' "${state:-}"
+    printf '15) ZIP/Postal:       %s
+' "${zip:-}"
+    printf '16) Country:          %s
+' "${country:-}"
+    printf '----------------------------------------
+'
+    printf ' Full Name (derived): %s
+' "${fullname:-}"
+    printf ' Address  (derived):  %s
+' "${address:-}"
+    printf '----------------------------------------
+'
+    printf '%s
+' '(Mutable exports in ~/.profile)'
+    printf '17) GPS Port:         %s
+' "${gpsport:-}"
+    printf '18) APRS Pass:        %s
+' "${aprspass:-}"
+    printf '19) AX25 Pass:        %s
+' "${axnodepass:-}"
+    printf '========================================
+'
+    printf '%s
+' 'Actions:'
+    printf '%s
+' ' 20) Update position from GPS'
+    printf '%s
+' ' 21) Recalculate APRS password'
+    printf '%s
+' ' 22) Refresh from HamDB (US callsigns only)'
+    printf '%s
+' '----------------------------------------'
 
     local choice
-    read -r -p 'Enter a number to edit (1-19), or press Enter to accept: ' choice
+    read -r -p 'Select 1-22 to edit/run, or press Enter to save and exit: ' choice
     [[ -z "$choice" ]] && return 0
 
     case "$choice" in
-      1) PromptEdit callsign 'Callsign' 1 ;;
-      2) PromptEdit gpsport  'DigiHubGPSport (nogps or device port)' 0 ;;
-      3) PromptEdit lat      'Latitude' 1 ;;
-      4) PromptEdit lon      'Longitude' 1 ;;
-      5) printf '%s\n' 'Grid is derived from lat/lon. Edit lat/lon to change it.' ;;
-      6) PromptEdit aprspass 'APRS password' 0 ;;
-      7) PromptEdit axnodepass 'AX25 password' 0 ;;
-      8) PromptEdit class    'License Class' 0 ;;
-      9) PromptEdit expiry   'Expiry' 0 ;;
-      10) PromptEdit licstat 'License Status' 0 ;;
-      11) PromptEdit forename 'Forename' 0 ;;
-      12) PromptEdit initial  'Middle Initial (optional)' 0 ;;
-      13) PromptEdit surname  'Surname' 0 ;;
-      14) PromptEdit suffix   'Suffix (optional)' 0 ;;
-      15) PromptEdit street   'Street' 0 ;;
-      16) PromptEdit town     'Town/City' 0 ;;
-      17) PromptEdit state    'State' 0 ;;
-      18) PromptEdit zip      'ZIP/Postal' 0 ;;
-      19) PromptEdit country  'Country' 0 ;;
-      *) printf '%s\n' 'Invalid selection.' >&2 ;;
+      1)
+        local old
+        old="$(trim "${callsign}")"
+        PromptEdit callsign 'Callsign (US callsign or non-us)' 1
+        callsign="$(trim "${callsign}")"
+        if [[ "$(trim "${callsign}")" != "$old" ]]; then
+          HandleCallsignChange || true
+          RecalcAPRS || true
+        fi
+        ;;
+      2) PromptEdit class 'License Class' 0 ;;
+      3) PromptEdit expiry 'Expiry' 0 ;;
+      4) printf '%s
+' 'Grid is derived from lat/lon. Use 5/6 or action 20 to change.' ;;
+      5) PromptEdit lat 'Latitude' 1; UpdateCoordsAndGrid || true ;;
+      6) PromptEdit lon 'Longitude' 1; UpdateCoordsAndGrid || true ;;
+      7) PromptEdit licstat 'License Status' 0 ;;
+      8) PromptEdit forename 'Forename' 0 ;;
+      9) PromptEdit initial 'Middle Initial (optional)' 0 ;;
+      10) PromptEdit surname 'Surname' 0 ;;
+      11) PromptEdit suffix 'Suffix (optional)' 0 ;;
+      12) PromptEdit street 'Street' 0 ;;
+      13) PromptEdit town 'Town/City' 0 ;;
+      14) PromptEdit state 'State' 0 ;;
+      15) PromptEdit zip 'ZIP/Postal' 0 ;;
+      16) PromptEdit country 'Country' 0 ;;
+      17) PromptEdit gpsport 'DigiHubGPSport (nogps or device port)' 0 ;;
+      18) PromptEdit aprspass 'DigiHubaprs' 0 ;;
+      19) PromptEdit axnodepass 'DigiHubaxnode' 0 ;;
+      20)
+        printf '
+%s
+' 'Reading GPS position...'
+        if GetGPSLatLon; then
+          UpdateCoordsAndGrid || true
+        else
+          printf '%s
+' 'GPS read failed.' >&2
+        fi
+        ;;
+      21) RecalcAPRS || true ;;
+      22) HandleCallsignChange || true ;;
+      *) printf '%s
+' 'Invalid selection.' >&2 ;;
     esac
 
-    SetUnknownIfEmpty class expiry licstat forename surname street town state zip country gpsport aprspass axnodepass
+    # Normalize optionals (NOT initial/suffix)
+    SetUnknownIfEmpty gpsport aprspass axnodepass class expiry licstat forename surname street town state zip country
+
+    # Keep gpsport normalization consistent with installer
+    if [[ "${gpsport}" == 'nodata' ]]; then gpsport='nogps'; fi
+
+    # Rebuild derived strings
     BuildFullName
     BuildAddress
-
-    if [[ "$choice" == '3' || "$choice" == '4' ]]; then
-      UpdateCoordsAndGrid
-    fi
-
-    if [[ "$choice" == '1' ]]; then
-      HandleCallsignChange || true
-      # Callsign changed: automatically recalc APRS password (installer behavior)
-      RecalcAPRS || true
-    fi
   done
 }
+
+# --------------- Write back ---------------
 
 write_dhinfo() {
   backup_file "$DHINFO_FILE"
@@ -485,8 +551,6 @@ write_dhinfo() {
 
 write_profile() {
   backup_file "$PROFILE_FILE"
-  if [[ "${gpsport}" == 'nodata' ]]; then gpsport='nogps'; fi
-
   profile_set_export 'DigiHubGPSport' "$gpsport"
   profile_set_export 'DigiHubcall' "$callsign"
   profile_set_export 'DigiHubaprs' "$aprspass"
@@ -494,7 +558,6 @@ write_profile() {
   profile_set_export 'DigiHubLat' "$lat"
   profile_set_export 'DigiHubLon' "$lon"
   profile_set_export 'DigiHubgrid' "$grid"
-
   profile_set_path_line "$PathLine"
 }
 
@@ -503,6 +566,7 @@ write_profile() {
 require_profile
 load_digihub_paths
 
+# Load current mutable exports from profile
 gpsport="$(profile_get_export 'DigiHubGPSport')"
 callsign_env="$(profile_get_export 'DigiHubcall')"
 aprspass="$(profile_get_export 'DigiHubaprs')"
@@ -511,17 +575,31 @@ lat_env="$(profile_get_export 'DigiHubLat')"
 lon_env="$(profile_get_export 'DigiHubLon')"
 grid_env="$(profile_get_export 'DigiHubgrid')"
 
+# Load .dhinfo (fills user fields; may include coords/callsign)
 load_from_dhinfo
 
-[[ -n "$(trim "${callsign_env}")" ]] && callsign="$callsign_env"
-[[ -n "$(trim "${lat_env}")" ]] && lat="$lat_env"
-[[ -n "$(trim "${lon_env}")" ]] && lon="$lon_env"
-[[ -n "$(trim "${grid_env}")" ]] && grid="$grid_env"
+# Prefer profile for core mutable settings if present
+[[ -n "$(trim "${callsign_env}")" ]] && callsign="$(trim "${callsign_env}")"
+[[ -n "$(trim "${lat_env}")"      ]] && lat="$(trim "${lat_env}")"
+[[ -n "$(trim "${lon_env}")"      ]] && lon="$(trim "${lon_env}")"
+[[ -n "$(trim "${grid_env}")"     ]] && grid="$(trim "${grid_env}")"
 
+# Ensure basics exist
+callsign="$(trim "${callsign:-}")"
+lat="$(trim "${lat:-}")"
+lon="$(trim "${lon:-}")"
+
+# Defaults / normalization
 SetUnknownIfEmpty gpsport callsign aprspass axnodepass
 SetUnknownIfEmpty class expiry licstat forename surname street town state zip country
+# initial/suffix intentionally allowed to remain blank
+
+# Derive computed strings
 BuildFullName
 BuildAddress
+
+# Validate/derive grid if possible (do not hard fail if missing scripts)
+UpdateCoordsAndGrid || true
 
 printf '\n%s\n' 'DigiHub Configuration Editor (dhedit)'
 printf '%s\n' "Profile: ${PROFILE_FILE}"
@@ -529,89 +607,17 @@ printf '%s\n' "Data:    ${DHINFO_FILE}"
 printf '\n%s\n' 'Continue?'
 YnCont || exit 0
 
-old_callsign="${callsign}"
-PromptEdit callsign 'Callsign' 1
-if [[ "${callsign}" != "${old_callsign}" ]]; then
-  HandleCallsignChange || true
-  RecalcAPRS || true
-fi
-
-printf '\n%s\n' 'Update Latitude/Longitude:'
-printf '%s\n' '  1) Use current values (no change)'
-printf '%s\n' '  2) Enter manually'
-printf '%s\n' '  3) Read from GPS (gpsposition.py)'
-read -r -p 'Select 1-3: ' mode
-
-case "${mode:-1}" in
-  1) ;;
-  2)
-    PromptEdit lat 'Latitude' 1
-    PromptEdit lon 'Longitude' 1
-    ;;
-  3)
-    printf '\n%s\n' 'Attempting to read GPS position...'
-    if GetGPSLatLon; then
-      printf '%s\n' "GPS returned lat=${lat} lon=${lon}"
-    else
-      printf '%s\n' 'GPS read failed. Enter manually instead.' >&2
-      PromptEdit lat 'Latitude' 1
-      PromptEdit lon 'Longitude' 1
-    fi
-    ;;
-  *)
-    printf '%s\n' 'Invalid selection; keeping current coordinates.' >&2
-    ;;
-esac
-
-UpdateCoordsAndGrid
-
-printf '\n%s\n' 'Do you want to enter or edit your name fields?'
-if YnCont; then
-  PromptEdit forename 'Forename' 0
-  PromptEdit initial  'Middle Initial (optional)' 0
-  PromptEdit surname  'Surname' 0
-  PromptEdit suffix   'Suffix (optional)' 0
-fi
-
-printf '\n%s\n' 'Do you want to enter or edit your address fields?'
-if YnCont; then
-  PromptEdit street  'Street' 0
-  PromptEdit town    'Town/City' 0
-  PromptEdit state   'State' 0
-  PromptEdit zip     'ZIP/Postal' 0
-  PromptEdit country 'Country' 0
-fi
-
-printf '\n%s\n' 'Do you want to enter or edit license fields (class/expiry/status)?'
-if YnCont; then
-  PromptEdit class   'License Class' 0
-  PromptEdit expiry  'Expiry' 0
-  PromptEdit licstat 'License Status' 0
-fi
-
-printf '\n%s\n' 'Do you want to edit GPS port / APRS / AX25 values?'
-if YnCont; then
-  PromptEdit gpsport    'DigiHubGPSport (nogps or device port)' 0
-  printf '\n%s\n' 'Recalculate APRS password from callsign now?'
-  if YnCont; then
-    RecalcAPRS || true
-  else
-    PromptEdit aprspass  'DigiHubaprs' 0
-  fi
-  PromptEdit axnodepass 'DigiHubaxnode' 0
-fi
-
-SetUnknownIfEmpty gpsport class expiry licstat forename surname street town state zip country aprspass axnodepass
-BuildFullName
-BuildAddress
-
+# Single UI loop
 ReviewAndEdit
 
-SetUnknownIfEmpty gpsport class expiry licstat forename surname street town state zip country aprspass axnodepass
+# Final normalize/derive
+SetUnknownIfEmpty gpsport aprspass axnodepass class expiry licstat forename surname street town state zip country
+if [[ "${gpsport}" == 'nodata' ]]; then gpsport='nogps'; fi
 BuildFullName
 BuildAddress
-UpdateCoordsAndGrid
+UpdateCoordsAndGrid || true
 
+# Write back
 write_profile
 write_dhinfo
 
