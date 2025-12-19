@@ -461,5 +461,5 @@ sudo apt -y install lastlog2 >/dev/null 2>&1
 # Reboot post install
 while true; do
   printf '\nDigiHub successfully installed.\nReboot Now (Y/n)? '; read -n1 -r response; case $response in
-    Y|y) sudo reboot; printf '\nRebooting\n' ;; N|n) deactivate >/dev/null 2>&1; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; exit 0 ;; *) printf '\nInvalid response, please select Y/n' ;; esac
+    Y|y) sudo reboot; printf '\nRebooting\n'; exit 0 ;; N|n) deactivate >/dev/null 2>&1; printf '\nPlease reboot before attempting to access DigiHub features\n\n'; exit 0 ;; *) printf '\nInvalid response, please select Y/n' ;; esac
 done
