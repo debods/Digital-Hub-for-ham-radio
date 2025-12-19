@@ -181,7 +181,7 @@ YnCont() {
 function CleanUp() {
  printf '\nInstallation aborted.\n'
  deactivate >/dev/null 2>&1 || true
- rm "$HomePath"/.dhinfo >/dev/null 2>&1 
+ rm "$HomePath"/.dhinfo* >/dev/null 2>&1 
  mv "$HomePath"/.profile.dh "$HomePath"/.profile  >/dev/null 2>&1 
  for i in "DigiHub"  "sysinfo"; do
   if grep -qF "$i" "$HomePath"/.profile; then
@@ -190,7 +190,7 @@ function CleanUp() {
  done
  perl -i.bak -0777 -pe 's{\s+\z}{}m' ~/.profile >/dev/null 2>&1
  printf '\n' >> "$HomePath"/.profile
- rm "$HomePath"/.profile.bak
+ rm "$HomePath"/.profile.bak* >/dev/null 2>&1 
  fi
  sudo rm -rf -- "$DigiHubHome"
  # remove installed packages

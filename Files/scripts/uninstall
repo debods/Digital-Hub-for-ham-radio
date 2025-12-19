@@ -14,7 +14,7 @@ END
 
 # Uninstallation warning 
 printf '\nThis action will completely remove DigiHub, continue (Y/n)? '; read -n1 -r response
-case $response in Y|y) printf '\nRemoving DigiHub.\n'; break ;; N|n) printf '\nUninstall aborted.\n\n'; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
+case $response in Y|y) printf '\nRemoving DigiHub.\n';; N|n) printf '\nUninstall aborted.\n\n'; exit 0 ;; *) printf '\nInvalid response, please select (Y/n)\n' ;; esac
 
 HomePath="/home/$USER"
 deactivate >/dev/null 2>&1
@@ -34,10 +34,10 @@ fi
 # Remove whitespace from .profile
 perl -i.bak -0777 -pe 's{\s+\z}{}m' ~/.profile >/dev/null 2>&1
 printf '\n' >> "$HomePath"/.profile
-rm "$HomePath"/.profile.bak
+rm "$HomePath"/.profile.bak*
 
 # Remove configuration file
- rm "$HomePath"/.dhinfo
+ rm "$HomePath"/.dhinfo*
  
 # Remove Directories
 sudo rm -rf "$DigiHub"
