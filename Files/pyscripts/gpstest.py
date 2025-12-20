@@ -18,8 +18,9 @@ Exit codes:
   3 = nogps
 """
 
-try:
  from __future__ import annotations
+
+try:
  import argparse
  import glob
  import os
