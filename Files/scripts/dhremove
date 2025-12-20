@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 : <<'END'
-uninstall
+dhremove
 DigiHub uninstallation
 
 Version 1.0a
