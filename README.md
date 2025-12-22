@@ -40,7 +40,7 @@ A number of the methods used to install, run and maintain DigiHub are included a
 | uninstall   | Remove DigiHub                                              | bash        |
 | whohami     | Show user information held for current configuration        | bash        |
 
-These along with other tools are located in DigiHub/scripts (included in the PATH after install).
+These, along with other tools, are located in DigiHub/scripts (which is included in the PATH after installation).
 
 GPS Devices
 -----------
@@ -48,18 +48,17 @@ DigiHub will detect and use correctly installed and working GPS devices.
 
 A recommended GPS device is a Waveshare L76X Multi-GNSS HAT (available [here](https://www.waveshare.com/l76x-gps-hat.htm)). It works with any PC hardware via USB and with Raspberry Pi via the GPIO header.
 
-Operators without a US callsign
--------------------------------
-DigiHub leverages an API for callsign validation and user data, which is reliable in the US; unfortunately, outside the US, this is not the case.
+Operators without a US callsign/Custom Installation
+---------------------------------------------------
+DigiHub leverages an API for automatic callsign validation and user data, which is reliable in the US; unfortunately, outside the US, it is not.
 
-To enable ham operators outside the US to use DigiHub, entering non-us (or NON-US) as the callsign when installing DigiHub, e.g., ./install.sh NON-US, allows manual entry of the unvalidated callsign and other required information.
+For non-US and custom installations, entering 'noFCC' as the callsign when installing DigiHub, e.g., ./install.sh noFCC, will allow manual entry of the unvalidated callsign and other required/optional details.
 
 Installation
 -------------
-Ensure the Operating System you are installing on has an active Internet connection and, if you intend to use a GPS, it is connected and working.
+Ensure the Operating System you are installing on has an active Internet connection, and that, if you intend to use a GPS, it is connected and working.
 
-**Note:** *python3, wget and curl will be installed as part of the process if not already available and will NOT be removed if DigiHub is removed.  The system will also be updated.*
-
+**Note:** * As part of the installation process, there is an option to update the OS (recommended). If DigiHub is removed, any packages added by the installer will be removed.*
 
 Issue the following commands:
 
@@ -67,7 +66,7 @@ If necessary, install git:
 ```bash
 sudo apt install git
 ```
-Change directory to the install folder, make the installer executable and run it:
+Change directory to the install folder, make the installer executable, and run it:
 
 ```bash
 git clone https://github.com/debods/DigiHubHam.git

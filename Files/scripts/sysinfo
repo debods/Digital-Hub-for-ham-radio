@@ -84,7 +84,7 @@ echo -e " ${colb}Disk${ncol}                 $disksizegb GB Total, $diskavaigb G
 echo -e " ${colb}Hostname${ncol}             $(hostname -f)"
 echo -e " ${colb}IP Addresses${ncol}         Internal: $(ip a | grep -w inet | grep -v 127| awk '{ printf "%s ",$2 }')External: $(wget -q -O - http://icanhazip.com/ | tail)"; echo
 echo -e " ${colb}Timezone${ncol}             $(date +'UTC %z (%Z)')"
-echo -e " ${colb}System Time${ncol}          $(date +'%A,%e %B %Y, %r')"
+echo -e " ${colb}System Time${ncol}          $(date +'%A, %e %B %Y, %r')"
 echo -e " ${colb}Uptime${ncol}               $dd day(s) $hh hours(s) $mm minute(s) $remsecs second(s)"
 echo -e " ${colb}Last Login${ncol}           ${lastinfo[0]} (${lastinfo[1]}) ${lastinfo[6]} ${lastinfo[3]}, ${lastinfo[4]} ${lastinfo[5]} ${lastinfo[8]}"; echo
 echo -e " ${colb}DigiHub \\u00A9 KQ4ZCI 2025${ncol}"
