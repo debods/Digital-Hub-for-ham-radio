@@ -67,10 +67,12 @@ PromptOpt() {
  printf -v "$var_name" '%s' "$value"
 }
 
+# Set variables to "Unknown" if they are empty/whitespace (safe under set -u)
 SetUnknownIfEmpty() {
- local v
+ local v val
  for v in "$@"; do
-  [[ -z ${!v//[[:space:]]/} ]] && printf -v "$v" '%s' "Unknown"
+  val="${!v-}"                       # <-- safe default if var is unset
+  [[ -z ${val//[[:space:]]/} ]] && printf -v "$v" '%s' "Unknown"
  done
 }
 
@@ -431,4 +433,4 @@ ReviewAndEdit
 BuildFullName
 BuildAddress
 
-printf '\nIf you still see an immediate abort, the error above will tell us exactly what failed.\n'
+printf '\nIf you still see an abort, the error above will show exactly what failed.\n'
