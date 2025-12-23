@@ -240,9 +240,9 @@ UpdateOS() {
   printf 'Skipping OS update.\n\n'
   return 0
  fi
- sudo apt-get update || return 1
- sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade || return 1
- sudo apt-get -y autoremove || return 1
+ sudo apt-get update >/dev/null 2>&1 || return 1
+ sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade >/dev/null 2>&1 || return 1
+ sudo apt-get -y autoremove >/dev/null 2>&1 || return 1
  printf '\nOS update complete.\n\n'
 }
 
