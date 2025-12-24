@@ -39,6 +39,9 @@ WANT_REINSTALL=0
 DID_PURGE=0
 READY_TO_PURGE=0
 
+# Transactional reinstall
+BACKUP_DIR=""
+
 ### FUNCTIONS ###
 
 OnErr() {
@@ -52,7 +55,7 @@ trap 'OnErr "$LINENO" "$?"' ERR
 # Optional values
 PromptOpt() {
  local var_name=$1 prompt=$2 value=""
- read -rp "$prompt" value
+ read -rp "$prompt" value </dev/tty
  printf -v "$var_name" '%s' "$value"
 }
 
@@ -76,9 +79,9 @@ PromptEdit() {
   current="${!var_name-}"
 
   if [[ -n "$current" ]]; then
-   read -rp "${prompt} [${current}]: " value
+   read -rp "${prompt} [${current}]: " value </dev/tty
   else
-   read -rp "${prompt}: " value
+   read -rp "${prompt}: " value </dev/tty
   fi
 
   if [[ -n "$value" ]]; then
@@ -219,7 +222,6 @@ FetchHamDB() {
  class="$t_class"; expiry="$t_expiry"; grid="$t_grid"; lat="$t_lat"; lon="$t_lon"; licstat="$t_licstat"
  forename="$t_forename"; initial="$t_initial"; surname="$t_surname"; suffix="$t_suffix"
  street="$t_street"; town="$t_town"; state="$t_state"; zip="$t_zip"; country="$t_country"
-
  return 0
 }
 
@@ -240,7 +242,7 @@ LoadExistingConfig() {
  return 0
 }
 
-# Purge existing DigiHub install (best effort)
+# Purge existing DigiHub install (best effort) - used for fresh-install cleanup
 PurgeExistingInstall() {
  deactivate >/dev/null 2>&1 || true
 
@@ -291,13 +293,21 @@ AbortInstall() {
  local rc=${1:-1}
  printf '\nInstallation aborted.\n' >&2
 
+ # Transactional reinstall rollback: restore previous installation if we backed it up
+ if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
+  printf '%bWarning:%b Restoring previous installation from %s\n' "$colr" "$ncol" "$BACKUP_DIR" >&2
+  rm -rf -- "$DigiHubHome" >/dev/null 2>&1 || true
+  mv "$BACKUP_DIR" "$DigiHubHome" >/dev/null 2>&1 || true
+  return "$rc"
+ fi
+
  # If we have NOT purged an existing known-good install yet, do NOT purge now.
  if (( EXISTING_INSTALL == 1 && DID_PURGE == 0 )); then
   printf '%bWarning:%b Existing installation was NOT removed.\n' "$colr" "$ncol" >&2
   return "$rc"
  fi
 
- # Fresh install (or post-purge reinstall) -> clean up partials
+ # Fresh install (or non-transactional) -> clean up partials
  PurgeExistingInstall
  return "$rc"
 }
@@ -312,10 +322,17 @@ _on_exit() {
 
 _on_signal() {
  local sig="$1"
- # Same safety rules as abort
- if (( EXISTING_INSTALL == 0 || DID_PURGE == 1 )); then
-  PurgeExistingInstall
+
+ # If transactional reinstall backup exists, restore on signal
+ if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
+  rm -rf -- "$DigiHubHome" >/dev/null 2>&1 || true
+  mv "$BACKUP_DIR" "$DigiHubHome" >/dev/null 2>&1 || true
+ else
+  if (( EXISTING_INSTALL == 0 || DID_PURGE == 1 )); then
+   PurgeExistingInstall
+  fi
  fi
+
  case "$sig" in
   INT) exit 130 ;;
   TERM) exit 143 ;;
@@ -328,14 +345,14 @@ trap '_on_signal INT' INT
 trap '_on_signal TERM' TERM
 
 UpdateOS() {
- if ! YnCont "Run OS update now (y/N)? "; then
-  printf 'Skipping OS update.\n\n'
+ if ! YnCont "Update Operating System (y/N)? "; then
   return 0
  fi
+ printf 'Updataing Operating System... '
  sudo apt-get update >/dev/null 2>&1 || return 1
  sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade >/dev/null 2>&1 || return 1
  sudo apt-get -y autoremove >/dev/null 2>&1 || return 1
- printf '\nOS update complete.\n\n'
+ printf 'Complete.\n\n'
 }
 
 # Review & edit all captured values before installing
@@ -367,7 +384,7 @@ ReviewAndEdit() {
 
   case "$choice" in
    1)
-     # Snapshot current state so we can revert if user changes their mind
+     # Snapshot current state so we can revert
      local old_callsign="$callsign" old_class="$class" old_expiry="$expiry" old_grid="$grid" old_lat="$lat" old_lon="$lon" old_licstat="$licstat"
      local old_forename="$forename" old_initial="$initial" old_surname="$surname" old_suffix="$suffix"
      local old_street="$street" old_town="$town" old_state="$state" old_zip="$zip" old_country="$country"
@@ -507,29 +524,14 @@ if [[ -f "$HomePath/.profile" ]] && grep -qF "DigiHub Installation" "$HomePath/.
  printf '\n\n%bWarning!%b An existing DigiHub installation was detected for %b%s%b.\n' \
   "$colr" "$ncol" "$colb" "$DigiHubcall" "$ncol"
  printf 'You can reinstall/replace it, or quit now.\n\n'
- printf 'Options:\n'
- printf '  (r) Review/edit configuration and reinstall\n'
- printf '  (q) Quit without making changes\n'
 
- while :; do
-  read -r -n1 -p $'\nSelect r/q: ' choice </dev/tty
-  printf '\n'
-  case "$choice" in
-   [Rr])
-    WANT_REINSTALL=1
-    printf '\nProceeding with reinstall. Existing installation will be removed after you confirm your details.\n\n'
-    LoadExistingConfig
-    break
-    ;;
-   [Qq])
-    printf '\nNo changes made. Existing DigiHub installation preserved.\n\n'
-    exit 0
-    ;;
-   *)
-    printf 'Invalid choice. Select r or q.\n' >&2
-    ;;
-  esac
- done
+ if YnCont "Reinstall/replace existing DigiHub (y/N)? "; then
+  WANT_REINSTALL=1
+  printf '\nProceeding with reinstall. Existing installation will be backed up and restored automatically if installation fails.\n\n'
+  LoadExistingConfig
+ else
+  exit 0
+ fi
 fi
 
 # 0 or 1 arg allowed; 2+ is an error
@@ -548,13 +550,7 @@ if [[ -n "${cs//[[:space:]]/}" ]]; then
   callsign="$cs"
  fi
 elif (( EXISTING_INSTALL == 0 )); then
- # No existing install and no arg -> prompt callsign (then try API, else manual)
  callsign="NOFCC"
-fi
-
-# If not already loaded from existing install, handle initial entry
-if (( EXISTING_INSTALL == 0 || WANT_REINSTALL == 0 )); then
- :
 fi
 
 # If we still don't have a callsign (fresh run), prompt
@@ -577,7 +573,7 @@ if [[ "$callsign" != "NOFCC" ]]; then
  fi
 fi
 
-# Manual entry if needed (fresh run OR API failed and missing coords)
+# Manual entry if needed
 if [[ "$callsign" == "NOFCC" || $API_OK -eq 0 ]]; then
  if [[ "$callsign" == "NOFCC" ]]; then
   printf '\nPlease enter the requested information. All fields are required unless stated otherwise.\n\n'
@@ -587,13 +583,11 @@ if [[ "$callsign" == "NOFCC" || $API_OK -eq 0 ]]; then
   printf '\nManual entry is required for "%b%s%b".\n' "$colb" "$callsign" "$ncol"
  fi
 
- # Only force coords if missing; otherwise keep what we already have (important for reinstall/edit cases)
  if [[ -z "${lat//[[:space:]]/}" || -z "${lon//[[:space:]]/}" ]]; then
   PromptEdit lat "Latitude (-90..90)" 1
   PromptEdit lon "Longitude (-180..180)" 1
   EnsureValidCoordsAndGrid
  else
-  # Make sure grid is consistent if missing
   if [[ -z "${grid//[[:space:]]/}" ]]; then
    EnsureValidCoordsAndGrid
   fi
@@ -633,12 +627,12 @@ SetUnknownIfEmpty class expiry licstat forename surname street town state zip co
 BuildFullName
 BuildAddress
 
-# Final review/edit of captured values (includes improved callsign-edit logic)
+# Final review/edit
 ReviewAndEdit
 BuildFullName
 BuildAddress
 
-# Final “are we doing this?” checkpoint (and sets safe purge point)
+# Final checkpoint
 if ! YnCont "Proceed with installation (y/N)? "; then
  printf '\nInstallation cancelled.\n'
  exit 0
@@ -646,10 +640,13 @@ fi
 
 READY_TO_PURGE=1
 
-# If reinstall was requested, purge ONLY NOW (after user confirmed details)
+# Transactional reinstall: backup existing install ONLY NOW (after user confirmed details)
 if (( WANT_REINSTALL == 1 && READY_TO_PURGE == 1 )); then
+ BACKUP_DIR="$HomePath/DigiHub.backup.$(date +%Y%m%d-%H%M%S)"
+ if [[ -d "$DigiHubHome" ]]; then
+  mv "$DigiHubHome" "$BACKUP_DIR"
+ fi
  DID_PURGE=1
- PurgeExistingInstall
 fi
 
 # Ensure base directory exists for THIS run
@@ -721,7 +718,7 @@ case "$gpscode" in
   gpsposition="$(python3 "$SrcPy/gpsposition.py")"
   IFS=',' read -r gpslat gpslon <<< "$gpsposition"
   hamgrid="$(python3 "$SrcPy/hamgrid.py" "$gpslat" "$gpslon")"
-  printf 'found on port %s and ready.\nCurrent coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nFCC/entered coordinates:\tLatitude: %s Longitude: %s Grid: %s\n' \
+  printf 'found on port %s and ready.\nCurrent coordinates\t\tLatitude: %s Longitude: %s Grid: %s\nEntered coordinates:\t\tLatitude: %s Longitude: %s Grid: %s\n' \
    "$gpsport" "$gpslat" "$gpslon" "$hamgrid" "$lat" "$lon" "$grid"
 
   while :; do
@@ -755,8 +752,13 @@ axnodepass="$(openssl rand -base64 12 | tr -dc A-Za-z0-9 | head -c6)"
 # Copy files/directories into place & set permissions
 cp -R "$InstallPath/Files/"* "$DigiHubHome/"
 
-# Set execute bits (after copy)
-chmod +x "$ScriptPath/"* "$PythonPath/"*
+# SAFE chmod (no failure if dirs empty/missing)
+if [[ -d "$ScriptPath" ]]; then
+ find "$ScriptPath" -maxdepth 1 -type f -exec chmod +x {} \;
+fi
+if [[ -d "$PythonPath" ]]; then
+ find "$PythonPath" -maxdepth 1 -type f -exec chmod +x {} \;
+fi
 
 # Set Environment & PATH
 perl -i.dh -0777 -pe 's{\s+\z}{}m' "$HomePath/.profile" >/dev/null 2>&1 || true
@@ -794,6 +796,11 @@ printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
  "$forename" "$initial" "$surname" "$suffix" \
  "$street" "$town" "$state" "$zip" "$country" \
  > "$HomePath/.dhinfo"
+
+# Transactional reinstall: delete backup ONLY after success
+if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
+ rm -rf -- "$BACKUP_DIR" >/dev/null 2>&1 || true
+fi
 
 # Reboot post install
 while true; do
