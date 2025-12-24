@@ -41,6 +41,8 @@ READY_TO_PURGE=0
 
 # Transactional reinstall
 BACKUP_DIR=""
+PROFILE_BAK=""
+DHINFO_BAK=""
 
 ### FUNCTIONS ###
 
@@ -293,11 +295,19 @@ AbortInstall() {
  local rc=${1:-1}
  printf '\nInstallation aborted.\n' >&2
 
- # Transactional reinstall rollback: restore previous installation if we backed it up
+ # Transactional reinstall rollback: restore previous installation (dir + profile + dhinfo)
  if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
   printf '%bWarning:%b Restoring previous installation from %s\n' "$colr" "$ncol" "$BACKUP_DIR" >&2
   rm -rf -- "$DigiHubHome" >/dev/null 2>&1 || true
-  mv "$BACKUP_DIR" "$DigiHubHome" >/dev/null 2>&1 || true
+  mv -- "$BACKUP_DIR" "$DigiHubHome" >/dev/null 2>&1 || true
+
+  if [[ -n "${PROFILE_BAK-}" && -f "$PROFILE_BAK" ]]; then
+   cp -f -- "$PROFILE_BAK" "$HomePath/.profile" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "${DHINFO_BAK-}" && -f "$DHINFO_BAK" ]]; then
+   cp -f -- "$DHINFO_BAK" "$HomePath/.dhinfo" >/dev/null 2>&1 || true
+  fi
+
   return "$rc"
  fi
 
@@ -326,7 +336,14 @@ _on_signal() {
  # If transactional reinstall backup exists, restore on signal
  if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
   rm -rf -- "$DigiHubHome" >/dev/null 2>&1 || true
-  mv "$BACKUP_DIR" "$DigiHubHome" >/dev/null 2>&1 || true
+  mv -- "$BACKUP_DIR" "$DigiHubHome" >/dev/null 2>&1 || true
+
+  if [[ -n "${PROFILE_BAK-}" && -f "$PROFILE_BAK" ]]; then
+   cp -f -- "$PROFILE_BAK" "$HomePath/.profile" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "${DHINFO_BAK-}" && -f "$DHINFO_BAK" ]]; then
+   cp -f -- "$DHINFO_BAK" "$HomePath/.dhinfo" >/dev/null 2>&1 || true
+  fi
  else
   if (( EXISTING_INSTALL == 0 || DID_PURGE == 1 )); then
    PurgeExistingInstall
@@ -384,7 +401,6 @@ ReviewAndEdit() {
 
   case "$choice" in
    1)
-     # Snapshot current state so we can revert
      local old_callsign="$callsign" old_class="$class" old_expiry="$expiry" old_grid="$grid" old_lat="$lat" old_lon="$lon" old_licstat="$licstat"
      local old_forename="$forename" old_initial="$initial" old_surname="$surname" old_suffix="$suffix"
      local old_street="$street" old_town="$town" old_state="$state" old_zip="$zip" old_country="$country"
@@ -644,10 +660,24 @@ READY_TO_PURGE=1
 # Transactional reinstall: backup existing install ONLY NOW (after user confirmed details)
 if (( WANT_REINSTALL == 1 && READY_TO_PURGE == 1 )); then
  BACKUP_DIR="$HomePath/DigiHub.backup.$(date +%Y%m%d-%H%M%S)"
- if [[ -d "$DigiHubHome" ]]; then
-  mv "$DigiHubHome" "$BACKUP_DIR"
+
+ # Snapshot user-level config that lives outside DigiHubHome
+ if [[ -f "$HomePath/.profile" ]]; then
+  PROFILE_BAK="$BACKUP_DIR.profile"
+  cp -f -- "$HomePath/.profile" "$PROFILE_BAK" >/dev/null 2>&1 || true
  fi
- DID_PURGE=1
+ if [[ -f "$HomePath/.dhinfo" ]]; then
+  DHINFO_BAK="$BACKUP_DIR.dhinfo"
+  cp -f -- "$HomePath/.dhinfo" "$DHINFO_BAK" >/dev/null 2>&1 || true
+ fi
+
+ if [[ -d "$DigiHubHome" ]]; then
+  mv -- "$DigiHubHome" "$BACKUP_DIR"
+  DID_PURGE=1
+ else
+  # No directory to move, so don't pretend we purged anything
+  DID_PURGE=0
+ fi
 fi
 
 # Ensure base directory exists for THIS run
@@ -801,6 +831,12 @@ printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
 # Transactional reinstall: delete backup ONLY after success
 if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
  rm -rf -- "$BACKUP_DIR" >/dev/null 2>&1 || true
+fi
+if [[ -n "${PROFILE_BAK-}" && -f "$PROFILE_BAK" ]]; then
+ rm -f -- "$PROFILE_BAK" >/dev/null 2>&1 || true
+fi
+if [[ -n "${DHINFO_BAK-}" && -f "$DHINFO_BAK" ]]; then
+ rm -f -- "$DHINFO_BAK" >/dev/null 2>&1 || true
 fi
 
 # Reboot post install
