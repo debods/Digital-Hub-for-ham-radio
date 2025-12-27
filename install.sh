@@ -44,6 +44,9 @@ BACKUP_DIR=""
 PROFILE_BAK=""
 DHINFO_BAK=""
 
+# Success marker (used to decide whether to delete backup artifacts on exit)
+SUCCESS=0
+
 ### FUNCTIONS ###
 
 OnErr() {
@@ -324,10 +327,26 @@ AbortInstall() {
 
 _on_exit() {
  local rc=$?
+
  if [[ $rc -ne 0 ]]; then
   AbortInstall "$rc"
+  return "$rc"
  fi
- return "$rc"
+
+ # rc == 0: only delete backup artifacts if we truly completed successfully
+ if (( SUCCESS == 1 )); then
+  if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
+   rm -rf -- "$BACKUP_DIR" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "${PROFILE_BAK-}" && -f "$PROFILE_BAK" ]]; then
+   rm -f -- "$PROFILE_BAK" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "${DHINFO_BAK-}" && -f "$DHINFO_BAK" ]]; then
+   rm -f -- "$DHINFO_BAK" >/dev/null 2>&1 || true
+  fi
+ fi
+
+ return 0
 }
 
 _on_signal() {
@@ -828,16 +847,8 @@ printf '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' \
  "$street" "$town" "$state" "$zip" "$country" \
  > "$HomePath/.dhinfo"
 
-# Transactional reinstall: delete backup ONLY after success
-if [[ -n "${BACKUP_DIR-}" && -d "$BACKUP_DIR" ]]; then
- rm -rf -- "$BACKUP_DIR" >/dev/null 2>&1 || true
-fi
-if [[ -n "${PROFILE_BAK-}" && -f "$PROFILE_BAK" ]]; then
- rm -f -- "$PROFILE_BAK" >/dev/null 2>&1 || true
-fi
-if [[ -n "${DHINFO_BAK-}" && -f "$DHINFO_BAK" ]]; then
- rm -f -- "$DHINFO_BAK" >/dev/null 2>&1 || true
-fi
+# Mark success so EXIT trap knows it's safe to delete backup artifacts
+SUCCESS=1
 
 # Reboot post install
 while true; do
